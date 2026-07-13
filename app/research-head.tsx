@@ -5,14 +5,11 @@ import Animated, { FadeInDown, FadeOutUp, ReduceMotion } from 'react-native-rean
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme, type AppPalette } from '@/components/app-theme';
+import { useDemoProjects } from '@/components/demo-projects-provider';
 import { ProposalReviewModal } from '@/components/proposal-review-modal';
 import { ResearchHeadDrawer, type ResearchHeadView } from '@/components/research-head-drawer';
 import { ThemeToggle } from '@/components/theme-toggle';
-import {
-  initialResearchProposals,
-  type ProposalStatus,
-  type ResearchProposal,
-} from '@/constants/research-proposals';
+import { type ProposalStatus, type ResearchProposal } from '@/constants/research-proposals';
 
 type ProposalFilter = 'All' | ProposalStatus;
 
@@ -109,6 +106,7 @@ function ProposalCard({ proposal, onOpen }: ProposalCardProps) {
 
 export default function ResearchHeadScreen() {
   const { colors, isDark } = useAppTheme();
+  const { projects: proposals, recordDecision } = useDemoProjects();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
@@ -116,7 +114,6 @@ export default function ResearchHeadScreen() {
   const [activeView, setActiveView] = useState<ResearchHeadView>('proposals');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<ResearchProposal | null>(null);
-  const [proposals, setProposals] = useState(initialResearchProposals);
   const [filter, setFilter] = useState<ProposalFilter>('Pending Review');
   const [query, setQuery] = useState('');
   const [decisionNotice, setDecisionNotice] = useState<{
@@ -154,19 +151,7 @@ export default function ResearchHeadScreen() {
   }, [decisionNotice]);
 
   const handleDecision = (proposalId: string, status: ProposalStatus, reviewNote?: string) => {
-    const decidedAt = new Date().toLocaleDateString('en-PH', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-
-    setProposals((current) =>
-      current.map((proposal) =>
-        proposal.id === proposalId
-          ? { ...proposal, decidedAt, reviewNote, status }
-          : proposal,
-      ),
-    );
+    recordDecision(proposalId, status, reviewNote);
     setDecisionNotice({ id: proposalId, status });
   };
 

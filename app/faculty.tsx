@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -13,8 +14,11 @@ import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
+import { useDemoProjects } from '@/components/demo-projects-provider';
 import { FacultyDrawer, type FacultyNavAction } from '@/components/faculty-drawer';
+import { FacultyProjectCard } from '@/components/faculty-project-card';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { type ResearchProposal } from '@/constants/research-proposals';
 
 const FACULTY_NAME = 'Quey Jinnet Baldos';
 
@@ -42,6 +46,7 @@ function showComingSoon(title: string, message: string) {
 
 export default function FacultyDashboard() {
   const { colors, isDark } = useAppTheme();
+  const { projects } = useDemoProjects();
   const { width } = useWindowDimensions();
   const isWide = width >= 780;
   const showAskAthena = width >= 520;
@@ -61,41 +66,38 @@ export default function FacultyDashboard() {
     () => [
       {
         label: 'Active proposals',
-        value: 0,
+        value: projects.filter((project) => ['Pending Review', 'For Revision'].includes(project.status)).length,
         icon: 'document-text-outline' as const,
         iconBackground: isDark ? '#3C1822' : '#FDE5E7',
         iconColor: colors.primary,
       },
       {
         label: 'Approved studies',
-        value: 0,
+        value: projects.filter((project) => project.status === 'Approved').length,
         icon: 'checkmark-circle-outline' as const,
         iconBackground: isDark ? '#0A3024' : '#DCF6E8',
         iconColor: isDark ? '#35DB87' : '#13854A',
       },
       {
         label: 'Under evaluation',
-        value: 0,
+        value: projects.filter((project) => project.status === 'Pending Review').length,
         icon: 'time-outline' as const,
         iconBackground: isDark ? '#432510' : '#FFF0D8',
         iconColor: isDark ? '#FF9C35' : '#B85C00',
       },
       {
         label: 'Action required',
-        value: 0,
+        value: projects.filter((project) => project.status === 'For Revision').length,
         icon: 'alert-circle-outline' as const,
         iconBackground: isDark ? '#142C61' : '#E5EEFF',
         iconColor: isDark ? '#63A2FF' : '#2166D1',
       },
     ],
-    [colors.primary, isDark],
+    [colors.primary, isDark, projects],
   );
 
-  const openSubmitProposal = () => {
-    showComingSoon(
-      'Submit proposal',
-      'The dashboard is ready. The proposal submission form can be connected in the next phase.',
-    );
+  const openProject = (project: ResearchProposal) => {
+    router.push(`/faculty-project/${encodeURIComponent(project.id)}` as Href);
   };
 
   const handleDrawerAction = (action: FacultyNavAction) => {
@@ -103,27 +105,18 @@ export default function FacultyDashboard() {
       return;
     }
 
-    const messages: Record<Exclude<FacultyNavAction, 'dashboard'>, [string, string]> = {
-      submit: [
-        'Submit proposal',
-        'The guided proposal form will be added in the next phase.',
-      ],
-      help: [
-        'Research Help Facility',
-        'Research resources and assistance will appear here.',
-      ],
-      calls: [
-        'Research calls',
-        'Open institutional and external research calls will appear here.',
-      ],
-    };
+    if (action === 'projects') {
+      router.push('/faculty-projects' as Href);
+      return;
+    }
 
-    showComingSoon(...messages[action]);
+    showComingSoon('Research calls', 'Open institutional and external research calls will appear here.');
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <FacultyDrawer
+        activeAction="dashboard"
         onClose={() => setDrawerOpen(false)}
         onSelect={handleDrawerAction}
         visible={drawerOpen}
@@ -202,7 +195,7 @@ export default function FacultyDashboard() {
             </View>
             <Pressable
               accessibilityRole="button"
-              onPress={openSubmitProposal}
+              onPress={() => router.push('/faculty-projects' as Href)}
               style={({ pressed }) => [
                 styles.proposalButton,
                 {
@@ -211,8 +204,8 @@ export default function FacultyDashboard() {
                   transform: [{ scale: pressed ? 0.985 : 1 }],
                 },
               ]}>
-              <Ionicons name="add" size={19} color="#FFFFFF" />
-              <Text style={styles.proposalButtonText}>Submit Proposal</Text>
+              <Ionicons name="folder-open-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.proposalButtonText}>My Projects</Text>
             </Pressable>
           </View>
 
@@ -288,29 +281,26 @@ export default function FacultyDashboard() {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}>
             <View style={[styles.manuscriptHeader, { borderColor: colors.border }]}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>My Submitted Manuscripts</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
-                Real-time status updates for your active submissions.
-              </Text>
-            </View>
-            <View style={styles.emptyState}>
-              <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
-                <Ionicons name="file-tray-outline" size={29} color={colors.textMuted} />
+              <View style={styles.manuscriptHeaderRow}>
+                <View style={styles.manuscriptHeaderCopy}>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>My Projects</Text>
+                  <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+                    Monitor approval progress, feedback, and required actions.
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push('/faculty-projects' as Href)}
+                  style={({ pressed }) => [styles.viewAllButton, { opacity: pressed ? 0.58 : 1 }]}>
+                  <Text style={[styles.viewAllText, { color: colors.primary }]}>View all</Text>
+                  <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+                </Pressable>
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No projects recorded</Text>
-              <Text style={[styles.emptyBody, { color: colors.textMuted }]}>
-                You haven&apos;t uploaded any research proposals to the portal yet.
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={openSubmitProposal}
-                style={({ pressed }) => [
-                  styles.emptyButton,
-                  { borderColor: colors.border, opacity: pressed ? 0.62 : 1 },
-                ]}>
-                <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-                <Text style={[styles.emptyButtonText, { color: colors.primary }]}>Start a proposal</Text>
-              </Pressable>
+            </View>
+            <View style={styles.projectGrid}>
+              {projects.slice(0, 3).map((project) => (
+                <FacultyProjectCard compact key={project.id} onPress={openProject} project={project} />
+              ))}
             </View>
           </Animated.View>
         </View>
@@ -413,8 +403,13 @@ const styles = StyleSheet.create({
   statIcon: { alignItems: 'center', borderRadius: 13, height: 48, justifyContent: 'center', width: 48 },
   manuscriptCard: { borderCurve: 'continuous', borderRadius: 20, borderWidth: 1, marginTop: 24, overflow: 'hidden' },
   manuscriptHeader: { borderBottomWidth: 1, paddingHorizontal: 22, paddingVertical: 20 },
+  manuscriptHeaderRow: { alignItems: 'center', flexDirection: 'row', gap: 14, justifyContent: 'space-between' },
+  manuscriptHeaderCopy: { flex: 1 },
   sectionTitle: { fontSize: 15, fontWeight: '800' },
   sectionSubtitle: { fontSize: 10, marginTop: 5 },
+  viewAllButton: { alignItems: 'center', flexDirection: 'row', gap: 5, paddingVertical: 7 },
+  viewAllText: { fontSize: 10, fontWeight: '800' },
+  projectGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, padding: 16 },
   emptyState: { alignItems: 'center', minHeight: 275, paddingHorizontal: 24, paddingVertical: 43 },
   emptyIcon: { alignItems: 'center', borderRadius: 17, borderWidth: 1, height: 54, justifyContent: 'center', width: 54 },
   emptyTitle: { fontSize: 13, fontWeight: '800', marginTop: 17 },

@@ -7,9 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/components/app-theme';
 import { BrandMark } from '@/components/brand-mark';
 
-export type FacultyNavAction = 'dashboard' | 'submit' | 'help' | 'calls';
+export type FacultyNavAction = 'dashboard' | 'projects' | 'calls';
 
 type FacultyDrawerProps = {
+  activeAction: Exclude<FacultyNavAction, 'calls'>;
   visible: boolean;
   onClose: () => void;
   onSelect: (action: FacultyNavAction) => void;
@@ -21,12 +22,11 @@ const navItems: {
   label: string;
 }[] = [
   { action: 'dashboard', icon: 'grid-outline', label: 'Faculty Dashboard' },
-  { action: 'submit', icon: 'push-outline', label: 'Submit Proposal' },
-  { action: 'help', icon: 'link-outline', label: 'Research Help Facility' },
+  { action: 'projects', icon: 'folder-open-outline', label: 'My Projects' },
   { action: 'calls', icon: 'calendar-outline', label: 'Research Calls' },
 ];
 
-export function FacultyDrawer({ visible, onClose, onSelect }: FacultyDrawerProps) {
+export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: FacultyDrawerProps) {
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -114,7 +114,7 @@ export function FacultyDrawer({ visible, onClose, onSelect }: FacultyDrawerProps
           <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>FACULTY PORTAL</Text>
           <View style={styles.navList}>
             {navItems.map((item) => {
-              const selected = item.action === 'dashboard';
+              const selected = item.action === activeAction;
 
               return (
                 <Pressable
@@ -132,7 +132,7 @@ export function FacultyDrawer({ visible, onClose, onSelect }: FacultyDrawerProps
                     <Ionicons name={item.icon} size={18} color={selected ? '#FFFFFF' : colors.textMuted} />
                   </View>
                   <Text style={[styles.navText, { color: selected ? colors.primary : colors.text }]}>{item.label}</Text>
-                  {!selected && (
+                  {item.action === 'calls' && (
                     <View style={[styles.soonBadge, { borderColor: colors.border }]}>
                       <Text style={[styles.soonBadgeText, { color: colors.textMuted }]}>SOON</Text>
                     </View>
