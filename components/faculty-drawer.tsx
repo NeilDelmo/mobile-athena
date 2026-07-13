@@ -7,10 +7,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '@/components/app-theme';
 import { BrandMark } from '@/components/brand-mark';
 
-export type FacultyNavAction = 'dashboard' | 'projects' | 'calls';
+export type FacultyNavAction =
+  | 'activity'
+  | 'calls'
+  | 'dashboard'
+  | 'notifications'
+  | 'profile'
+  | 'projects';
 
 type FacultyDrawerProps = {
-  activeAction: Exclude<FacultyNavAction, 'calls'>;
+  activeAction: FacultyNavAction;
   visible: boolean;
   onClose: () => void;
   onSelect: (action: FacultyNavAction) => void;
@@ -24,6 +30,9 @@ const navItems: {
   { action: 'dashboard', icon: 'grid-outline', label: 'Faculty Dashboard' },
   { action: 'projects', icon: 'folder-open-outline', label: 'My Projects' },
   { action: 'calls', icon: 'calendar-outline', label: 'Research Calls' },
+  { action: 'activity', icon: 'git-branch-outline', label: 'Activity Timeline' },
+  { action: 'notifications', icon: 'notifications-outline', label: 'Notifications' },
+  { action: 'profile', icon: 'settings-outline', label: 'Profile & Settings' },
 ];
 
 export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: FacultyDrawerProps) {
@@ -132,11 +141,6 @@ export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: Facu
                     <Ionicons name={item.icon} size={18} color={selected ? '#FFFFFF' : colors.textMuted} />
                   </View>
                   <Text style={[styles.navText, { color: selected ? colors.primary : colors.text }]}>{item.label}</Text>
-                  {item.action === 'calls' && (
-                    <View style={[styles.soonBadge, { borderColor: colors.border }]}>
-                      <Text style={[styles.soonBadgeText, { color: colors.textMuted }]}>SOON</Text>
-                    </View>
-                  )}
                   {selected && <View style={[styles.activePill, { backgroundColor: colors.primary }]} />}
                 </Pressable>
               );
@@ -146,7 +150,7 @@ export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: Facu
           <View style={styles.drawerSpacer} />
           <View style={[styles.universityNote, { borderColor: colors.border }]}>
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
-            <Text style={[styles.universityNoteText, { color: colors.textMuted }]}>Faculty demo workspace</Text>
+            <Text style={[styles.universityNoteText, { color: colors.textMuted }]}>ATHENA faculty mobile workspace</Text>
           </View>
           <Pressable onPress={exitDemo} style={({ pressed }) => [styles.signOut, { opacity: pressed ? 0.58 : 1 }]}>
             <Ionicons name="arrow-back-outline" size={20} color={colors.textMuted} />
@@ -187,8 +191,6 @@ const styles = StyleSheet.create({
   navItem: { alignItems: 'center', borderRadius: 15, flexDirection: 'row', gap: 11, minHeight: 54, paddingHorizontal: 10, position: 'relative' },
   navIcon: { alignItems: 'center', borderRadius: 11, height: 34, justifyContent: 'center', width: 34 },
   navText: { flex: 1, fontSize: 13, fontWeight: '800' },
-  soonBadge: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 4 },
-  soonBadgeText: { fontSize: 7, fontWeight: '800', letterSpacing: 0.65 },
   activePill: { borderRadius: 2, height: 22, marginLeft: 2, width: 3 },
   drawerSpacer: { flex: 1 },
   universityNote: { alignItems: 'center', borderBottomWidth: 1, flexDirection: 'row', gap: 8, paddingBottom: 17 },

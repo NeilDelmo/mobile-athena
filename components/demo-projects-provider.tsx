@@ -5,9 +5,17 @@ import {
   type ProposalStatus,
   type ResearchProposal,
 } from '@/constants/research-proposals';
+import {
+  initialPortalNotifications,
+  type PortalNotification,
+  type PortalRole,
+} from '@/constants/portal-content';
 
 type DemoProjectsContextValue = {
   projects: ResearchProposal[];
+  notifications: PortalNotification[];
+  markAllNotificationsRead: (role: PortalRole) => void;
+  markNotificationRead: (notificationId: string) => void;
   recordDecision: (projectId: string, status: ProposalStatus, reviewNote?: string) => void;
 };
 
@@ -38,25 +46,41 @@ const decisionCopy: Record<ProposalStatus, { feedback: string; nextAction: strin
 
 export function DemoProjectsProvider({ children }: PropsWithChildren) {
   const [projects, setProjects] = useState<ResearchProposal[]>(initialResearchProposals);
+  const [notifications, setNotifications] = useState<PortalNotification[]>(initialPortalNotifications);
+
+  const markNotificationRead = useCallback((notificationId: string) => {
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.id === notificationId ? { ...notification, read: true } : notification,
+      ),
+    );
+  }, []);
+
+  const markAllNotificationsRead = useCallback((role: PortalRole) => {
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.role === role ? { ...notification, read: true } : notification,
+      ),
+    );
+  }, []);
 
   const recordDecision = useCallback(
     (projectId: string, status: ProposalStatus, reviewNote?: string) => {
       const copy = decisionCopy[status];
+      const decisionTitle =
+        status === 'Approved'
+          ? 'Proposal approved'
+          : status === 'For Revision'
+            ? 'Revision requested'
+            : status === 'Rejected'
+              ? 'Proposal rejected'
+              : 'Proposal returned to evaluation';
 
       setProjects((current) =>
         current.map((project) => {
           if (project.id !== projectId) {
             return project;
           }
-
-          const decisionTitle =
-            status === 'Approved'
-              ? 'Proposal approved'
-              : status === 'For Revision'
-                ? 'Revision requested'
-                : status === 'Rejected'
-                  ? 'Proposal rejected'
-                  : 'Research Head evaluation';
 
           const updatedTimeline = project.timeline
             .filter((item) => item.state !== 'upcoming')
@@ -83,11 +107,42 @@ export function DemoProjectsProvider({ children }: PropsWithChildren) {
           };
         }),
       );
+
+      setNotifications((current) => [
+        {
+          id: `faculty-${projectId}-${status.toLowerCase().replaceAll(' ', '-')}-${Date.now()}`,
+          role: 'faculty',
+          type: status === 'For Revision' ? 'revision' : 'decision',
+          title: decisionTitle,
+          message: reviewNote?.trim() || copy.feedback,
+          timeLabel: 'Just now',
+          createdAt: new Date().toISOString(),
+          read: false,
+          href: `/faculty-project/${projectId}`,
+          projectId,
+        },
+        ...current,
+      ]);
     },
     [],
   );
 
-  const value = useMemo(() => ({ projects, recordDecision }), [projects, recordDecision]);
+  const value = useMemo(
+    () => ({
+      projects,
+      notifications,
+      markAllNotificationsRead,
+      markNotificationRead,
+      recordDecision,
+    }),
+    [
+      markAllNotificationsRead,
+      markNotificationRead,
+      notifications,
+      projects,
+      recordDecision,
+    ],
+  );
 
   return <DemoProjectsContext.Provider value={value}>{children}</DemoProjectsContext.Provider>;
 }

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,9 +16,12 @@ type ProjectFilter = 'All' | 'Active' | 'Action Required' | 'Approved';
 
 export default function FacultyProjectsScreen() {
   const { colors, isDark } = useAppTheme();
-  const { projects } = useDemoProjects();
+  const { notifications, projects } = useDemoProjects();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filter, setFilter] = useState<ProjectFilter>('All');
+  const unreadCount = notifications.filter(
+    (notification) => notification.role === 'faculty' && !notification.read,
+  ).length;
 
   const filteredProjects = useMemo(() => {
     if (filter === 'Active') {
@@ -46,9 +49,17 @@ export default function FacultyProjectsScreen() {
       return;
     }
 
-    if (action === 'calls') {
-      Alert.alert('Research calls', 'Open institutional and external research calls will appear here.');
+    if (action === 'projects') {
+      return;
     }
+
+    const routes: Record<Exclude<FacultyNavAction, 'dashboard' | 'projects'>, string> = {
+      activity: '/activity?role=faculty',
+      calls: '/research-calls?role=faculty',
+      notifications: '/notifications?role=faculty',
+      profile: '/profile?role=faculty',
+    };
+    router.push(routes[action] as Href);
   };
 
   return (
@@ -78,10 +89,28 @@ export default function FacultyProjectsScreen() {
             </View>
           </View>
           <View style={styles.headerActions}>
+            <Pressable
+              accessibilityLabel="Notifications"
+              accessibilityRole="button"
+              onPress={() => router.push('/notifications?role=faculty' as Href)}
+              style={({ pressed }) => [
+                styles.notificationButton,
+                { backgroundColor: colors.surfaceMuted, opacity: pressed ? 0.65 : 1 },
+              ]}>
+              <Ionicons name="notifications-outline" size={20} color={colors.textMuted} />
+              {unreadCount > 0 && <View style={[styles.notificationDot, { backgroundColor: colors.primary }]} />}
+            </Pressable>
             <ThemeToggle />
-            <View style={[styles.headerAvatar, { backgroundColor: isDark ? '#A743C2' : '#8F32A8' }]}>
+            <Pressable
+              accessibilityLabel="Open profile and settings"
+              accessibilityRole="button"
+              onPress={() => router.push('/profile?role=faculty' as Href)}
+              style={({ pressed }) => [
+                styles.headerAvatar,
+                { backgroundColor: isDark ? '#A743C2' : '#8F32A8', opacity: pressed ? 0.72 : 1 },
+              ]}>
               <Text style={styles.headerAvatarText}>Q</Text>
-            </View>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -173,6 +202,8 @@ const styles = StyleSheet.create({
   headerEyebrow: { fontSize: 8, fontWeight: '900', letterSpacing: 1.25 },
   headerTitle: { fontSize: 16, fontWeight: '800', marginTop: 2 },
   headerActions: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  notificationButton: { alignItems: 'center', borderRadius: 21, height: 42, justifyContent: 'center', position: 'relative', width: 42 },
+  notificationDot: { borderColor: '#FFFFFF', borderRadius: 5, borderWidth: 2, height: 10, position: 'absolute', right: 3, top: 3, width: 10 },
   headerAvatar: { alignItems: 'center', borderRadius: 21, height: 42, justifyContent: 'center', width: 42 },
   headerAvatarText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   scrollContent: { paddingBottom: 42 },

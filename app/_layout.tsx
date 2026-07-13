@@ -23,6 +23,10 @@ function AppNavigator() {
         <Stack.Screen name="faculty-projects" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="faculty-project/[id]" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="research-head" options={{ animation: 'fade' }} />
+        <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="research-calls" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="activity" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="profile" options={{ animation: 'slide_from_right' }} />
       </Stack>
       <StatusBar style={isDark ? 'light' : 'dark'} animated />
     </NavigationThemeProvider>

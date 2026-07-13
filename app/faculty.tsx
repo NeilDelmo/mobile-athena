@@ -46,7 +46,7 @@ function showComingSoon(title: string, message: string) {
 
 export default function FacultyDashboard() {
   const { colors, isDark } = useAppTheme();
-  const { projects } = useDemoProjects();
+  const { notifications, projects } = useDemoProjects();
   const { width } = useWindowDimensions();
   const isWide = width >= 780;
   const showAskAthena = width >= 520;
@@ -62,6 +62,9 @@ export default function FacultyDashboard() {
   }, []);
 
   const notice = notices[activeNotice];
+  const unreadCount = notifications.filter(
+    (notification) => notification.role === 'faculty' && !notification.read,
+  ).length;
   const stats = useMemo(
     () => [
       {
@@ -110,7 +113,13 @@ export default function FacultyDashboard() {
       return;
     }
 
-    showComingSoon('Research calls', 'Open institutional and external research calls will appear here.');
+    const routes: Record<Exclude<FacultyNavAction, 'dashboard' | 'projects'>, string> = {
+      activity: '/activity?role=faculty',
+      calls: '/research-calls?role=faculty',
+      notifications: '/notifications?role=faculty',
+      profile: '/profile?role=faculty',
+    };
+    router.push(routes[action] as Href);
   };
 
   return (
@@ -163,16 +172,28 @@ export default function FacultyDashboard() {
             <Pressable
               accessibilityLabel="Notifications"
               accessibilityRole="button"
-              onPress={() => showComingSoon('Notifications', 'You have no new notifications.')}
+              onPress={() => router.push('/notifications?role=faculty' as Href)}
               style={({ pressed }) => [
                 styles.notificationButton,
                 { backgroundColor: colors.surfaceMuted, opacity: pressed ? 0.65 : 1 },
               ]}>
               <Ionicons name="notifications-outline" size={20} color={colors.textMuted} />
+              {unreadCount > 0 && (
+                <View style={[styles.notificationBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.notificationBadgeText}>{unreadCount}</Text>
+                </View>
+              )}
             </Pressable>
-            <View style={[styles.headerAvatar, { backgroundColor: isDark ? '#A743C2' : '#8F32A8' }]}>
+            <Pressable
+              accessibilityLabel="Open profile and settings"
+              accessibilityRole="button"
+              onPress={() => router.push('/profile?role=faculty' as Href)}
+              style={({ pressed }) => [
+                styles.headerAvatar,
+                { backgroundColor: isDark ? '#A743C2' : '#8F32A8', opacity: pressed ? 0.72 : 1 },
+              ]}>
               <Text style={styles.headerAvatarText}>Q</Text>
-            </View>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -337,7 +358,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   askButtonText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
-  notificationButton: { alignItems: 'center', borderRadius: 21, height: 42, justifyContent: 'center', width: 42 },
+  notificationButton: { alignItems: 'center', borderRadius: 21, height: 42, justifyContent: 'center', position: 'relative', width: 42 },
+  notificationBadge: { alignItems: 'center', borderRadius: 8, height: 16, justifyContent: 'center', minWidth: 16, paddingHorizontal: 4, position: 'absolute', right: -1, top: -1 },
+  notificationBadgeText: { color: '#FFFFFF', fontSize: 8, fontVariant: ['tabular-nums'], fontWeight: '900' },
   headerAvatar: { alignItems: 'center', borderRadius: 21, height: 42, justifyContent: 'center', width: 42 },
   headerAvatarText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   scrollContent: { paddingBottom: 42 },

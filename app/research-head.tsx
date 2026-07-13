@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, FadeOutUp, ReduceMotion } from 'react-native-reanimated';
@@ -106,7 +107,7 @@ function ProposalCard({ proposal, onOpen }: ProposalCardProps) {
 
 export default function ResearchHeadScreen() {
   const { colors, isDark } = useAppTheme();
-  const { projects: proposals, recordDecision } = useDemoProjects();
+  const { notifications, projects: proposals, recordDecision } = useDemoProjects();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
@@ -124,6 +125,9 @@ export default function ResearchHeadScreen() {
   const pendingProposals = proposals.filter((proposal) => proposal.status === 'Pending Review');
   const revisionCount = proposals.filter((proposal) => proposal.status === 'For Revision').length;
   const approvedCount = proposals.filter((proposal) => proposal.status === 'Approved').length;
+  const unreadCount = notifications.filter(
+    (notification) => notification.role === 'research-head' && !notification.read,
+  ).length;
 
   const filteredProposals = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -169,6 +173,7 @@ export default function ResearchHeadScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ResearchHeadDrawer
         activeView={activeView}
+        notificationCount={unreadCount}
         onChangeView={setActiveView}
         onClose={() => setDrawerOpen(false)}
         pendingCount={pendingProposals.length}
@@ -225,15 +230,23 @@ export default function ResearchHeadScreen() {
           </View>
           <View style={styles.headerActions}>
             {!isCompact && (
-              <Pressable style={[styles.notificationButton, { backgroundColor: colors.surfaceMuted }]}>
+              <Pressable
+                accessibilityLabel="Notifications"
+                accessibilityRole="button"
+                onPress={() => router.push('/notifications?role=research-head' as Href)}
+                style={[styles.notificationButton, { backgroundColor: colors.surfaceMuted }]}>
                 <Ionicons name="notifications-outline" size={19} color={colors.text} />
-                {pendingProposals.length > 0 && <View style={[styles.notificationDot, { backgroundColor: colors.primary }]} />}
+                {unreadCount > 0 && <View style={[styles.notificationDot, { backgroundColor: colors.primary }]} />}
               </Pressable>
             )}
             <ThemeToggle />
-            <View style={[styles.headerAvatar, { backgroundColor: colors.primary }]}>
+            <Pressable
+              accessibilityLabel="Open profile and settings"
+              accessibilityRole="button"
+              onPress={() => router.push('/profile?role=research-head' as Href)}
+              style={({ pressed }) => [styles.headerAvatar, { backgroundColor: colors.primary, opacity: pressed ? 0.72 : 1 }]}>
               <Text style={styles.headerAvatarText}>RH</Text>
-            </View>
+            </Pressable>
           </View>
         </View>
       </View>

@@ -11,6 +11,7 @@ export type ResearchHeadView = 'dashboard' | 'proposals';
 
 type ResearchHeadDrawerProps = {
   activeView: ResearchHeadView;
+  notificationCount: number;
   pendingCount: number;
   visible: boolean;
   onChangeView: (view: ResearchHeadView) => void;
@@ -19,6 +20,7 @@ type ResearchHeadDrawerProps = {
 
 export function ResearchHeadDrawer({
   activeView,
+  notificationCount,
   pendingCount,
   visible,
   onChangeView,
@@ -70,6 +72,23 @@ export function ResearchHeadDrawer({
       badge: pendingCount > 0 ? String(pendingCount) : undefined,
     },
   ];
+
+  const routeItems: { label: string; icon: keyof typeof Ionicons.glyphMap; href: string; badge?: string }[] = [
+    { label: 'Research calls', icon: 'calendar-outline', href: '/research-calls?role=research-head' },
+    { label: 'Activity timeline', icon: 'git-branch-outline', href: '/activity?role=research-head' },
+    {
+      label: 'Notifications',
+      icon: 'notifications-outline',
+      href: '/notifications?role=research-head',
+      badge: notificationCount > 0 ? String(notificationCount) : undefined,
+    },
+    { label: 'Profile & settings', icon: 'settings-outline', href: '/profile?role=research-head' },
+  ];
+
+  const openRoute = (href: string) => {
+    closeDrawer();
+    router.push(href as Href);
+  };
 
   return (
     <Modal animationType="fade" onRequestClose={closeDrawer} transparent visible={visible}>
@@ -141,15 +160,22 @@ export function ResearchHeadDrawer({
                 </Pressable>
               );
             })}
-            <View accessibilityState={{ disabled: true }} style={[styles.navItem, styles.disabledNavItem]}>
-              <View style={[styles.navIcon, { backgroundColor: colors.surfaceMuted }]}>
-                <Ionicons name="stats-chart-outline" size={18} color={colors.textMuted} />
-              </View>
-              <Text style={[styles.navText, { color: colors.textMuted }]}>Project monitoring</Text>
-              <View style={[styles.soonBadge, { borderColor: colors.border }]}>
-                <Text style={[styles.soonBadgeText, { color: colors.textMuted }]}>SOON</Text>
-              </View>
-            </View>
+            {routeItems.map((item) => (
+              <Pressable
+                key={item.label}
+                onPress={() => openRoute(item.href)}
+                style={({ pressed }) => [styles.navItem, { opacity: pressed ? 0.68 : 1 }]}>
+                <View style={[styles.navIcon, { backgroundColor: colors.surfaceMuted }]}>
+                  <Ionicons name={item.icon} size={18} color={colors.textMuted} />
+                </View>
+                <Text style={[styles.navText, { color: colors.text }]}>{item.label}</Text>
+                {item.badge && (
+                  <View style={[styles.navBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.navBadgeText}>{item.badge}</Text>
+                  </View>
+                )}
+              </Pressable>
+            ))}
           </View>
 
           <View style={styles.drawerSpacer} />
@@ -186,9 +212,6 @@ const styles = StyleSheet.create({
   navText: { flex: 1, fontSize: 14, fontWeight: '800' },
   navBadge: { alignItems: 'center', borderRadius: 10, height: 20, justifyContent: 'center', minWidth: 20, paddingHorizontal: 5 },
   navBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
-  disabledNavItem: { opacity: 0.58 },
-  soonBadge: { borderRadius: 10, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 4 },
-  soonBadgeText: { fontSize: 7, fontWeight: '800', letterSpacing: 0.7 },
   activePill: { borderRadius: 2, height: 22, marginLeft: 2, width: 3 },
   drawerSpacer: { flex: 1 },
   officeNote: { alignItems: 'center', borderBottomWidth: 1, flexDirection: 'row', gap: 8, paddingBottom: 17 },
