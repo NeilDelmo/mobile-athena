@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,196 +9,310 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
-import { FacultyDrawer } from '@/components/faculty-drawer';
+import { FacultyDrawer, type FacultyNavAction } from '@/components/faculty-drawer';
 import { ThemeToggle } from '@/components/theme-toggle';
+
+const FACULTY_NAME = 'Quey Jinnet Baldos';
 
 const notices = [
   {
-    eyebrow: 'FACULTY RESEARCH GRANT',
-    title: 'Turn your next idea into meaningful impact.',
-    body: 'The next proposal cycle is now open for faculty-led projects.',
-    icon: 'bulb-outline' as const,
+    eyebrow: 'INSTITUTIONAL NOTICE',
+    title: 'Research Ethics Review',
+    body: 'Review the newly updated BatStateU institutional research ethics guidelines.',
   },
   {
-    eyebrow: 'CAMPUS RESEARCH WEEK',
-    title: 'Share your work with the Athena community.',
-    body: 'Presentation and poster session registrations are now available.',
-    icon: 'people-outline' as const,
+    eyebrow: 'RESEARCH CALL',
+    title: 'Faculty Research Grant',
+    body: 'The next proposal cycle is now open for faculty-led research projects.',
   },
   {
-    eyebrow: 'FACULTY DEVELOPMENT',
-    title: 'Fresh workshops for a stronger semester.',
-    body: 'Explore practical sessions designed for teaching and research.',
-    icon: 'school-outline' as const,
+    eyebrow: 'CAMPUS UPDATE',
+    title: 'Research Week 2026',
+    body: 'Presentation and poster-session registrations are now available.',
   },
 ];
 
-function showDemoMessage(title: string, message: string) {
-  if (Platform.OS === 'web') {
-    window.alert(`${title}\n\n${message}`);
-  } else {
-    Alert.alert(title, message);
-  }
+function showComingSoon(title: string, message: string) {
+  Alert.alert(title, message);
 }
 
 export default function FacultyDashboard() {
   const { colors, isDark } = useAppTheme();
   const { width } = useWindowDimensions();
   const isWide = width >= 780;
+  const showAskAthena = width >= 520;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeNotice, setActiveNotice] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveNotice((current) => (current + 1) % notices.length);
-    }, 5500);
+    }, 6000);
 
     return () => clearInterval(timer);
   }, []);
 
   const notice = notices[activeNotice];
+  const stats = useMemo(
+    () => [
+      {
+        label: 'Active proposals',
+        value: 0,
+        icon: 'document-text-outline' as const,
+        iconBackground: isDark ? '#3C1822' : '#FDE5E7',
+        iconColor: colors.primary,
+      },
+      {
+        label: 'Approved studies',
+        value: 0,
+        icon: 'checkmark-circle-outline' as const,
+        iconBackground: isDark ? '#0A3024' : '#DCF6E8',
+        iconColor: isDark ? '#35DB87' : '#13854A',
+      },
+      {
+        label: 'Under evaluation',
+        value: 0,
+        icon: 'time-outline' as const,
+        iconBackground: isDark ? '#432510' : '#FFF0D8',
+        iconColor: isDark ? '#FF9C35' : '#B85C00',
+      },
+      {
+        label: 'Action required',
+        value: 0,
+        icon: 'alert-circle-outline' as const,
+        iconBackground: isDark ? '#142C61' : '#E5EEFF',
+        iconColor: isDark ? '#63A2FF' : '#2166D1',
+      },
+    ],
+    [colors.primary, isDark],
+  );
+
+  const openSubmitProposal = () => {
+    showComingSoon(
+      'Submit proposal',
+      'The dashboard is ready. The proposal submission form can be connected in the next phase.',
+    );
+  };
+
+  const handleDrawerAction = (action: FacultyNavAction) => {
+    if (action === 'dashboard') {
+      return;
+    }
+
+    const messages: Record<Exclude<FacultyNavAction, 'dashboard'>, [string, string]> = {
+      submit: [
+        'Submit proposal',
+        'The guided proposal form will be added in the next phase.',
+      ],
+      help: [
+        'Research Help Facility',
+        'Research resources and assistance will appear here.',
+      ],
+      calls: [
+        'Research calls',
+        'Open institutional and external research calls will appear here.',
+      ],
+    };
+
+    showComingSoon(...messages[action]);
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <FacultyDrawer onClose={() => setDrawerOpen(false)} visible={drawerOpen} />
+      <FacultyDrawer
+        onClose={() => setDrawerOpen(false)}
+        onSelect={handleDrawerAction}
+        visible={drawerOpen}
+      />
+
       <View style={[styles.header, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerInner}>
           <View style={styles.headerLeft}>
             <Pressable
-              accessibilityLabel="Open navigation menu"
+              accessibilityLabel="Open faculty navigation"
+              accessibilityRole="button"
               onPress={() => setDrawerOpen(true)}
               style={({ pressed }) => [
                 styles.menuButton,
-                { backgroundColor: colors.primarySoft, opacity: pressed ? 0.65 : 1 },
+                { backgroundColor: colors.primarySoft, opacity: pressed ? 0.66 : 1 },
               ]}>
               <Ionicons name="menu" size={23} color={colors.primary} />
             </Pressable>
             <View>
-              <Text style={[styles.headerEyebrow, { color: colors.textMuted }]}>FACULTY PORTAL</Text>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>Dashboard</Text>
+              <Text style={[styles.headerEyebrow, { color: colors.primary }]}>ATHENA PORTAL</Text>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>Faculty Workspace</Text>
             </View>
           </View>
+
           <View style={styles.headerActions}>
+            {showAskAthena && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() =>
+                  showComingSoon('Ask Athena', 'The research assistant will be connected in a later phase.')
+                }
+                style={({ pressed }) => [
+                  styles.askButton,
+                  {
+                    backgroundColor: pressed ? colors.primaryPressed : colors.primary,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}>
+                <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+                <Text style={styles.askButtonText}>Ask Athena</Text>
+              </Pressable>
+            )}
             <ThemeToggle />
-            <View style={[styles.headerAvatar, { backgroundColor: colors.primary }]}> 
-              <Text style={styles.headerAvatarText}>FM</Text>
+            <Pressable
+              accessibilityLabel="Notifications"
+              accessibilityRole="button"
+              onPress={() => showComingSoon('Notifications', 'You have no new notifications.')}
+              style={({ pressed }) => [
+                styles.notificationButton,
+                { backgroundColor: colors.surfaceMuted, opacity: pressed ? 0.65 : 1 },
+              ]}>
+              <Ionicons name="notifications-outline" size={20} color={colors.textMuted} />
+            </Pressable>
+            <View style={[styles.headerAvatar, { backgroundColor: isDark ? '#A743C2' : '#8F32A8' }]}>
+              <Text style={styles.headerAvatarText}>Q</Text>
             </View>
           </View>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}>
         <View style={styles.page}>
           <View style={[styles.welcomeRow, isWide && styles.welcomeRowWide]}>
             <View style={styles.welcomeCopy}>
-              <View style={[styles.facultyBadge, { backgroundColor: colors.primarySoft }]}>
-                <Ionicons name="ribbon-outline" size={14} color={colors.primary} />
-                <Text style={[styles.facultyBadgeText, { color: colors.primary }]}>FACULTY WORKSPACE</Text>
-              </View>
-              <Text style={[styles.greeting, { color: colors.text }]}>Welcome back, Professor.</Text>
-              <Text style={[styles.greetingBody, { color: colors.textMuted }]}>Here&apos;s an overview of your project activity.</Text>
+              <Text selectable style={[styles.greeting, { color: colors.text }]}>Faculty Research Workspace</Text>
+              <Text style={[styles.greetingBody, { color: colors.textMuted }]}>
+                Welcome back,{' '}
+                <Text selectable style={{ color: colors.primary, fontWeight: '800' }}>
+                  {FACULTY_NAME.toUpperCase()}
+                </Text>
+                . Manage and track your institutional research submissions.
+              </Text>
             </View>
             <Pressable
-              onPress={() => showDemoMessage('Submit a proposal', 'The proposal form will be connected in the next project phase.')}
+              accessibilityRole="button"
+              onPress={openSubmitProposal}
               style={({ pressed }) => [
                 styles.proposalButton,
                 {
                   backgroundColor: pressed ? colors.primaryPressed : colors.primary,
-                  shadowColor: colors.shadow,
+                  opacity: pressed ? 0.86 : 1,
                   transform: [{ scale: pressed ? 0.985 : 1 }],
                 },
               ]}>
-              <View style={styles.proposalIcon}>
-                <Ionicons name="add" size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.proposalButtonText}>Submit proposal</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              <Ionicons name="add" size={19} color="#FFFFFF" />
+              <Text style={styles.proposalButtonText}>Submit Proposal</Text>
             </Pressable>
           </View>
 
-          <View style={[styles.banner, { backgroundColor: isDark ? '#790D29' : '#B20D30' }]}>
-            <View style={styles.bannerRingOne} />
-            <View style={styles.bannerRingTwo} />
+          <Animated.View
+            entering={FadeInDown.duration(380).reduceMotion(ReduceMotion.System)}
+            style={[
+              styles.banner,
+              { backgroundColor: isDark ? '#131D30' : '#6F2635', borderColor: colors.border },
+            ]}>
+            <View style={[styles.bannerGlow, { backgroundColor: colors.primary }]} />
+            <View style={styles.bannerPaperBack} />
+            <View style={styles.bannerPaperFront} />
+            <View style={styles.bannerPen} />
+            <View style={styles.bannerShade} />
             <View style={styles.bannerContent}>
-              <View style={styles.bannerIcon}>
-                <Ionicons name={notice.icon} size={24} color="#FFFFFF" />
+              <View style={[styles.noticeBadge, { backgroundColor: colors.primary }]}>
+                <Text style={styles.noticeBadgeText}>{notice.eyebrow}</Text>
               </View>
-              <Text style={styles.bannerEyebrow}>{notice.eyebrow}</Text>
               <Text style={styles.bannerTitle}>{notice.title}</Text>
               <Text style={styles.bannerBody}>{notice.body}</Text>
               <Pressable
-                onPress={() => showDemoMessage(notice.eyebrow, 'Details for this campus notice will be available here.')}
-                style={({ pressed }) => [styles.bannerButton, { opacity: pressed ? 0.75 : 1 }]}>
-                <Text style={styles.bannerButtonText}>Learn more</Text>
-                <Ionicons name="arrow-forward" size={15} color="#B20D30" />
+                accessibilityRole="button"
+                onPress={() =>
+                  showComingSoon(notice.title, 'Full notice details will be available here.')
+                }
+                style={({ pressed }) => [styles.bannerLink, { opacity: pressed ? 0.62 : 1 }]}>
+                <Text style={styles.bannerLinkText}>View notice</Text>
+                <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
               </Pressable>
             </View>
             <View style={styles.bannerDots}>
               {notices.map((item, index) => (
                 <Pressable
-                  accessibilityLabel={`Show ${item.eyebrow}`}
-                  key={item.eyebrow}
+                  accessibilityLabel={`Show ${item.title}`}
+                  accessibilityState={{ selected: activeNotice === index }}
+                  key={item.title}
                   onPress={() => setActiveNotice(index)}
                   style={[
                     styles.bannerDot,
-                    index === activeNotice && styles.bannerDotActive,
+                    index === activeNotice && [styles.bannerDotActive, { backgroundColor: colors.primary }],
                   ]}
                 />
               ))}
             </View>
-          </View>
+          </Animated.View>
 
           <View style={styles.statsGrid}>
-            {[
-              { label: 'Total projects', value: '0', icon: 'folder-open-outline' as const },
-              { label: 'Under review', value: '0', icon: 'time-outline' as const },
-              { label: 'Approved', value: '0', icon: 'checkmark-circle-outline' as const },
-            ].map((stat) => (
-              <View
+            {stats.map((stat, index) => (
+              <Animated.View
+                entering={FadeInDown.delay(70 + index * 45)
+                  .duration(330)
+                  .reduceMotion(ReduceMotion.System)}
                 key={stat.label}
-                style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <View style={[styles.statIcon, { backgroundColor: colors.primarySoft }]}>
-                  <Ionicons name={stat.icon} size={20} color={colors.primary} />
+                style={[
+                  styles.statCard,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}>
+                <View style={styles.statCopy}>
+                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>{stat.label.toUpperCase()}</Text>
+                  <Text selectable style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
                 </View>
-                <View>
-                  <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>{stat.label}</Text>
+                <View style={[styles.statIcon, { backgroundColor: stat.iconBackground }]}>
+                  <Ionicons name={stat.icon} size={22} color={stat.iconColor} />
                 </View>
-              </View>
+              </Animated.View>
             ))}
           </View>
 
-          <View style={styles.projectsHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>My projects</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>Your submitted proposals and active projects</Text>
+          <Animated.View
+            entering={FadeInDown.delay(230).duration(360).reduceMotion(ReduceMotion.System)}
+            style={[
+              styles.manuscriptCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}>
+            <View style={[styles.manuscriptHeader, { borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>My Submitted Manuscripts</Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+                Real-time status updates for your active submissions.
+              </Text>
             </View>
-            <View style={[styles.countBadge, { backgroundColor: colors.surfaceMuted }]}>
-              <Text style={[styles.countBadgeText, { color: colors.textMuted }]}>0 projects</Text>
-            </View>
-          </View>
-
-          <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.emptyIconOuter, { backgroundColor: colors.primarySoft }]}>
-              <View style={[styles.emptyIconInner, { backgroundColor: colors.surface }]}>
-                <Ionicons name="documents-outline" size={31} color={colors.primary} />
+            <View style={styles.emptyState}>
+              <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
+                <Ionicons name="file-tray-outline" size={29} color={colors.textMuted} />
               </View>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>No projects recorded</Text>
+              <Text style={[styles.emptyBody, { color: colors.textMuted }]}>
+                You haven&apos;t uploaded any research proposals to the portal yet.
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={openSubmitProposal}
+                style={({ pressed }) => [
+                  styles.emptyButton,
+                  { borderColor: colors.border, opacity: pressed ? 0.62 : 1 },
+                ]}>
+                <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+                <Text style={[styles.emptyButtonText, { color: colors.primary }]}>Start a proposal</Text>
+              </Pressable>
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No projects yet</Text>
-            <Text style={[styles.emptyBody, { color: colors.textMuted }]}>When you submit your first proposal, its progress and details will appear here.</Text>
-            <Pressable
-              onPress={() => showDemoMessage('Start your first proposal', 'The proposal form will be connected in the next project phase.')}
-              style={({ pressed }) => [
-                styles.emptyButton,
-                { borderColor: colors.border, opacity: pressed ? 0.6 : 1 },
-              ]}>
-              <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-              <Text style={[styles.emptyButtonText, { color: colors.primary }]}>Create proposal</Text>
-            </Pressable>
-          </View>
+          </Animated.View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -209,54 +322,103 @@ export default function FacultyDashboard() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: { borderBottomWidth: 1 },
-  headerInner: { alignItems: 'center', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', maxWidth: 1120, paddingHorizontal: 20, paddingVertical: 13, width: '100%' },
-  headerLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  menuButton: { alignItems: 'center', borderRadius: 14, height: 44, justifyContent: 'center', width: 44 },
-  headerEyebrow: { fontSize: 8, fontWeight: '800', letterSpacing: 1.4 },
-  headerTitle: { fontSize: 18, fontWeight: '800', marginTop: 1 },
-  headerActions: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  headerAvatar: { alignItems: 'center', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
-  headerAvatarText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
-  scrollContent: { paddingBottom: 36 },
-  page: { alignSelf: 'center', maxWidth: 1120, paddingHorizontal: 20, paddingTop: 30, width: '100%' },
-  welcomeRow: { gap: 22 },
-  welcomeRowWide: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'space-between' },
-  welcomeCopy: { gap: 7 },
-  facultyBadge: { alignItems: 'center', alignSelf: 'flex-start', borderRadius: 20, flexDirection: 'row', gap: 6, paddingHorizontal: 10, paddingVertical: 6 },
-  facultyBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 1.1 },
-  greeting: { fontSize: 29, fontWeight: '800', letterSpacing: -0.8, marginTop: 4 },
-  greetingBody: { fontSize: 13 },
-  proposalButton: { alignItems: 'center', alignSelf: 'flex-start', borderRadius: 15, elevation: 5, flexDirection: 'row', gap: 10, height: 52, paddingHorizontal: 13, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.21, shadowRadius: 14 },
-  proposalIcon: { alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 10, height: 30, justifyContent: 'center', width: 30 },
-  proposalButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
-  banner: { borderRadius: 25, marginTop: 30, minHeight: 265, overflow: 'hidden', padding: 26, position: 'relative' },
-  bannerRingOne: { borderColor: '#FFFFFF', borderRadius: 150, borderWidth: 30, height: 270, opacity: 0.07, position: 'absolute', right: -45, top: -90, width: 270 },
-  bannerRingTwo: { borderColor: '#FFFFFF', borderRadius: 90, borderWidth: 18, bottom: -75, height: 170, opacity: 0.06, position: 'absolute', right: 145, width: 170 },
-  bannerContent: { maxWidth: 600 },
-  bannerIcon: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 14, height: 45, justifyContent: 'center', marginBottom: 17, width: 45 },
-  bannerEyebrow: { color: '#FFD9E1', fontSize: 9, fontWeight: '800', letterSpacing: 1.45 },
-  bannerTitle: { color: '#FFFFFF', fontSize: 25, fontWeight: '800', letterSpacing: -0.55, lineHeight: 31, marginTop: 7 },
-  bannerBody: { color: '#FBDCE2', fontSize: 12, lineHeight: 18, marginTop: 7, maxWidth: 480 },
-  bannerButton: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderRadius: 10, flexDirection: 'row', gap: 7, marginTop: 18, paddingHorizontal: 13, paddingVertical: 9 },
-  bannerButtonText: { color: '#B20D30', fontSize: 11, fontWeight: '800' },
-  bannerDots: { bottom: 22, flexDirection: 'row', gap: 6, position: 'absolute', right: 24 },
-  bannerDot: { backgroundColor: 'rgba(255,255,255,0.36)', borderRadius: 3, height: 6, width: 6 },
-  bannerDotActive: { backgroundColor: '#FFFFFF', width: 22 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 18 },
-  statCard: { alignItems: 'center', borderRadius: 17, borderWidth: 1, flexBasis: 210, flexDirection: 'row', flexGrow: 1, gap: 12, minWidth: 170, padding: 15 },
-  statIcon: { alignItems: 'center', borderRadius: 12, height: 42, justifyContent: 'center', width: 42 },
-  statValue: { fontSize: 21, fontWeight: '800' },
-  statLabel: { fontSize: 10, marginTop: 1 },
-  projectsHeader: { alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'space-between', marginTop: 34 },
-  sectionTitle: { fontSize: 20, fontWeight: '800' },
-  sectionSubtitle: { fontSize: 11, marginTop: 4 },
-  countBadge: { borderRadius: 14, paddingHorizontal: 10, paddingVertical: 7 },
-  countBadgeText: { fontSize: 9, fontWeight: '700' },
-  emptyState: { alignItems: 'center', borderRadius: 22, borderStyle: 'dashed', borderWidth: 1.5, marginTop: 15, paddingHorizontal: 24, paddingVertical: 46 },
-  emptyIconOuter: { alignItems: 'center', borderRadius: 38, height: 76, justifyContent: 'center', width: 76 },
-  emptyIconInner: { alignItems: 'center', borderRadius: 27, height: 54, justifyContent: 'center', width: 54 },
-  emptyTitle: { fontSize: 17, fontWeight: '800', marginTop: 18 },
-  emptyBody: { fontSize: 11, lineHeight: 17, marginTop: 7, maxWidth: 360, textAlign: 'center' },
-  emptyButton: { alignItems: 'center', borderRadius: 11, borderWidth: 1, flexDirection: 'row', gap: 7, marginTop: 20, paddingHorizontal: 13, paddingVertical: 10 },
-  emptyButtonText: { fontSize: 11, fontWeight: '800' },
+  headerInner: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    maxWidth: 1160,
+    minHeight: 68,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    width: '100%',
+  },
+  headerLeft: { alignItems: 'center', flexDirection: 'row', gap: 11 },
+  menuButton: { alignItems: 'center', borderRadius: 13, height: 42, justifyContent: 'center', width: 42 },
+  headerEyebrow: { fontSize: 8, fontWeight: '900', letterSpacing: 1.25 },
+  headerTitle: { fontSize: 16, fontWeight: '800', marginTop: 2 },
+  headerActions: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  askButton: {
+    alignItems: 'center',
+    borderRadius: 13,
+    flexDirection: 'row',
+    gap: 7,
+    minHeight: 42,
+    paddingHorizontal: 14,
+  },
+  askButtonText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  notificationButton: { alignItems: 'center', borderRadius: 21, height: 42, justifyContent: 'center', width: 42 },
+  headerAvatar: { alignItems: 'center', borderRadius: 21, height: 42, justifyContent: 'center', width: 42 },
+  headerAvatarText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  scrollContent: { paddingBottom: 42 },
+  page: { alignSelf: 'center', maxWidth: 1160, paddingHorizontal: 18, paddingTop: 26, width: '100%' },
+  welcomeRow: { gap: 19 },
+  welcomeRowWide: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  welcomeCopy: { flex: 1 },
+  greeting: { fontSize: 27, fontWeight: '800', letterSpacing: -0.65 },
+  greetingBody: { fontSize: 11, lineHeight: 18, marginTop: 5, maxWidth: 720 },
+  proposalButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: 14,
+    flexDirection: 'row',
+    gap: 8,
+    minHeight: 46,
+    paddingHorizontal: 16,
+  },
+  proposalButtonText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  banner: {
+    borderCurve: 'continuous',
+    borderRadius: 22,
+    borderWidth: 1,
+    justifyContent: 'flex-end',
+    marginTop: 25,
+    minHeight: 250,
+    overflow: 'hidden',
+    padding: 28,
+    position: 'relative',
+  },
+  bannerGlow: { borderRadius: 170, height: 280, opacity: 0.2, position: 'absolute', right: -105, top: -100, width: 280 },
+  bannerPaperBack: { backgroundColor: '#F5EDE6', borderRadius: 8, height: 170, opacity: 0.13, position: 'absolute', right: 80, top: 28, transform: [{ rotate: '-8deg' }], width: 215 },
+  bannerPaperFront: { backgroundColor: '#FFFFFF', borderRadius: 8, height: 170, opacity: 0.17, position: 'absolute', right: 25, top: 45, transform: [{ rotate: '5deg' }], width: 215 },
+  bannerPen: { backgroundColor: '#6E87B2', borderRadius: 6, height: 230, opacity: 0.45, position: 'absolute', right: 198, top: -10, transform: [{ rotate: '35deg' }], width: 16 },
+  bannerShade: { backgroundColor: 'rgba(5,10,20,0.46)', bottom: 0, left: 0, position: 'absolute', right: 0, top: 0 },
+  bannerContent: { maxWidth: 620 },
+  noticeBadge: { alignSelf: 'flex-start', borderRadius: 5, paddingHorizontal: 8, paddingVertical: 5 },
+  noticeBadgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '900', letterSpacing: 0.75 },
+  bannerTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginTop: 11 },
+  bannerBody: { color: '#E8EDF7', fontSize: 11, lineHeight: 17, marginTop: 5, maxWidth: 530 },
+  bannerLink: { alignItems: 'center', flexDirection: 'row', gap: 5, marginTop: 13 },
+  bannerLinkText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
+  bannerDots: { bottom: 18, flexDirection: 'row', gap: 7, position: 'absolute', right: 20 },
+  bannerDot: { backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 4, height: 6, width: 6 },
+  bannerDotActive: { width: 20 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 11, marginTop: 20 },
+  statCard: {
+    alignItems: 'center',
+    borderCurve: 'continuous',
+    borderRadius: 18,
+    borderWidth: 1,
+    flexBasis: 220,
+    flexDirection: 'row',
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    minHeight: 108,
+    minWidth: 158,
+    padding: 17,
+  },
+  statCopy: { gap: 7 },
+  statLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.7 },
+  statValue: { fontSize: 29, fontVariant: ['tabular-nums'], fontWeight: '800' },
+  statIcon: { alignItems: 'center', borderRadius: 13, height: 48, justifyContent: 'center', width: 48 },
+  manuscriptCard: { borderCurve: 'continuous', borderRadius: 20, borderWidth: 1, marginTop: 24, overflow: 'hidden' },
+  manuscriptHeader: { borderBottomWidth: 1, paddingHorizontal: 22, paddingVertical: 20 },
+  sectionTitle: { fontSize: 15, fontWeight: '800' },
+  sectionSubtitle: { fontSize: 10, marginTop: 5 },
+  emptyState: { alignItems: 'center', minHeight: 275, paddingHorizontal: 24, paddingVertical: 43 },
+  emptyIcon: { alignItems: 'center', borderRadius: 17, borderWidth: 1, height: 54, justifyContent: 'center', width: 54 },
+  emptyTitle: { fontSize: 13, fontWeight: '800', marginTop: 17 },
+  emptyBody: { fontSize: 10, lineHeight: 16, marginTop: 7, maxWidth: 330, textAlign: 'center' },
+  emptyButton: { alignItems: 'center', borderRadius: 11, borderWidth: 1, flexDirection: 'row', gap: 7, marginTop: 19, paddingHorizontal: 13, paddingVertical: 10 },
+  emptyButtonText: { fontSize: 10, fontWeight: '800' },
 });

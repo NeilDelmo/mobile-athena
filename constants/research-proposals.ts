@@ -12,6 +12,8 @@ export type ResearchProposal = {
   duration: string;
   category: string;
   abstract: string;
+  reviewNote?: string;
+  decidedAt?: string;
 };
 
 export const initialResearchProposals: ResearchProposal[] = [

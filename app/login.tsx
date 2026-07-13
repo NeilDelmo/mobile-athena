@@ -16,7 +16,7 @@ export default function LoginScreen() {
     setIsConnecting(true);
     setTimeout(() => {
       setIsConnecting(false);
-      router.replace('/faculty' as Href);
+      router.replace('/research-head' as Href);
     }, 650);
   };
 

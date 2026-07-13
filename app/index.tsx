@@ -1,11 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
 import { BrandMark } from '@/components/brand-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { WelcomeIntro } from '@/components/welcome-intro';
+
+let hasPlayedWelcomeIntro = false;
 
 function CampusArtwork() {
   const { colors, isDark } = useAppTheme();
@@ -39,9 +44,20 @@ export default function GetStartedScreen() {
   const { colors } = useAppTheme();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
+  const [showIntro, setShowIntro] = useState(() => !hasPlayedWelcomeIntro);
+
+  const finishIntro = useCallback(() => {
+    hasPlayedWelcomeIntro = true;
+    setShowIntro(false);
+  }, []);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {!showIntro && (
+        <Animated.View
+          entering={FadeIn.duration(280).reduceMotion(ReduceMotion.System)}
+          style={styles.root}>
+          <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.ambientTop, { backgroundColor: colors.primarySoft }]} />
       <ScrollView
         bounces={false}
@@ -95,7 +111,7 @@ export default function GetStartedScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push('/login' as Href)}
+              onPress={() => router.push('/faculty' as Href)}
               style={({ pressed }) => [
                 styles.primaryButton,
                 {
@@ -113,11 +129,16 @@ export default function GetStartedScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+          </SafeAreaView>
+        </Animated.View>
+      )}
+      {showIntro && <WelcomeIntro onFinish={finishIntro} />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   safeArea: { flex: 1, overflow: 'hidden' },
   ambientTop: {
     borderRadius: 180,

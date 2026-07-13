@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeOutUp, ReduceMotion } from 'react-native-reanimated';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme, type AppPalette } from '@/components/app-theme';
 import { ProposalReviewModal } from '@/components/proposal-review-modal';
@@ -15,14 +16,26 @@ import {
 
 type ProposalFilter = 'All' | ProposalStatus;
 
-function getStatusStyle(status: ProposalStatus, colors: AppPalette) {
+function getStatusStyle(status: ProposalStatus, colors: AppPalette, isDark: boolean) {
   switch (status) {
     case 'Approved':
-      return { background: '#DCF5E6', color: '#177441', icon: 'checkmark-circle' as const };
+      return {
+        background: isDark ? '#0D362B' : '#DCF5E6',
+        color: isDark ? '#62E6A0' : '#177441',
+        icon: 'checkmark-circle' as const,
+      };
     case 'For Revision':
-      return { background: '#FFF0CF', color: '#946200', icon: 'refresh-circle' as const };
+      return {
+        background: isDark ? '#3A2D15' : '#FFF0CF',
+        color: isDark ? '#F4C85D' : '#946200',
+        icon: 'refresh-circle' as const,
+      };
     case 'Rejected':
-      return { background: '#FADCE2', color: '#A50F30', icon: 'close-circle' as const };
+      return {
+        background: isDark ? '#3C1923' : '#FADCE2',
+        color: isDark ? '#FF8197' : '#A50F30',
+        icon: 'close-circle' as const,
+      };
     default:
       return { background: colors.primarySoft, color: colors.primary, icon: 'time' as const };
   }
@@ -34,11 +47,13 @@ type ProposalCardProps = {
 };
 
 function ProposalCard({ proposal, onOpen }: ProposalCardProps) {
-  const { colors } = useAppTheme();
-  const badge = getStatusStyle(proposal.status, colors);
+  const { colors, isDark } = useAppTheme();
+  const badge = getStatusStyle(proposal.status, colors, isDark);
 
   return (
     <Pressable
+      accessibilityLabel={`Review ${proposal.id}: ${proposal.title}`}
+      accessibilityRole="button"
       onPress={() => onOpen(proposal)}
       style={({ pressed }) => [
         styles.proposalCard,
@@ -94,15 +109,20 @@ function ProposalCard({ proposal, onOpen }: ProposalCardProps) {
 
 export default function ResearchHeadScreen() {
   const { colors, isDark } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
   const isCompact = width < 420;
-  const [activeView, setActiveView] = useState<ResearchHeadView>('dashboard');
+  const [activeView, setActiveView] = useState<ResearchHeadView>('proposals');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState<ResearchProposal | null>(null);
   const [proposals, setProposals] = useState(initialResearchProposals);
-  const [filter, setFilter] = useState<ProposalFilter>('All');
+  const [filter, setFilter] = useState<ProposalFilter>('Pending Review');
   const [query, setQuery] = useState('');
+  const [decisionNotice, setDecisionNotice] = useState<{
+    id: string;
+    status: ProposalStatus;
+  } | null>(null);
 
   const pendingProposals = proposals.filter((proposal) => proposal.status === 'Pending Review');
   const revisionCount = proposals.filter((proposal) => proposal.status === 'For Revision').length;
@@ -124,10 +144,30 @@ export default function ResearchHeadScreen() {
     });
   }, [filter, proposals, query]);
 
-  const handleDecision = (proposalId: string, status: ProposalStatus) => {
+  useEffect(() => {
+    if (!decisionNotice) {
+      return;
+    }
+
+    const timer = setTimeout(() => setDecisionNotice(null), 2800);
+    return () => clearTimeout(timer);
+  }, [decisionNotice]);
+
+  const handleDecision = (proposalId: string, status: ProposalStatus, reviewNote?: string) => {
+    const decidedAt = new Date().toLocaleDateString('en-PH', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
     setProposals((current) =>
-      current.map((proposal) => (proposal.id === proposalId ? { ...proposal, status } : proposal)),
+      current.map((proposal) =>
+        proposal.id === proposalId
+          ? { ...proposal, decidedAt, reviewNote, status }
+          : proposal,
+      ),
     );
+    setDecisionNotice({ id: proposalId, status });
   };
 
   const openInbox = () => {
@@ -135,7 +175,10 @@ export default function ResearchHeadScreen() {
     setFilter('Pending Review');
   };
 
-  const headerTitle = activeView === 'dashboard' ? 'Dashboard' : 'Proposal inbox';
+  const headerTitle = activeView === 'dashboard' ? 'Approval overview' : 'Approval queue';
+  const noticeTone = decisionNotice
+    ? getStatusStyle(decisionNotice.status, colors, isDark)
+    : null;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -143,6 +186,7 @@ export default function ResearchHeadScreen() {
         activeView={activeView}
         onChangeView={setActiveView}
         onClose={() => setDrawerOpen(false)}
+        pendingCount={pendingProposals.length}
         visible={drawerOpen}
       />
       <ProposalReviewModal
@@ -150,6 +194,35 @@ export default function ResearchHeadScreen() {
         onDecision={handleDecision}
         proposal={selectedProposal}
       />
+
+      {decisionNotice && noticeTone && (
+        <Animated.View
+          accessibilityLiveRegion="polite"
+          entering={FadeInDown.duration(240).reduceMotion(ReduceMotion.System)}
+          exiting={FadeOutUp.duration(200).reduceMotion(ReduceMotion.System)}
+          style={[
+            styles.decisionToast,
+            {
+              backgroundColor: noticeTone.background,
+              borderColor: noticeTone.color,
+              top: Math.max(insets.top, 12) + 58,
+            },
+          ]}>
+          <Ionicons name={noticeTone.icon} size={21} color={noticeTone.color} />
+          <View style={styles.decisionToastCopy}>
+            <Text style={[styles.decisionToastTitle, { color: noticeTone.color }]}>
+              {decisionNotice.status === 'Approved'
+                ? 'Proposal approved'
+                : decisionNotice.status === 'For Revision'
+                  ? 'Returned for revision'
+                  : 'Proposal rejected'}
+            </Text>
+            <Text style={[styles.decisionToastBody, { color: colors.text }]}>
+              {decisionNotice.id} was updated in the approval queue.
+            </Text>
+          </View>
+        </Animated.View>
+      )}
 
       <View style={[styles.header, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.headerInner}>
@@ -268,13 +341,52 @@ export default function ResearchHeadScreen() {
             <>
               <View style={[styles.inboxHeading, isWide && styles.inboxHeadingWide]}>
                 <View>
-                  <Text style={[styles.inboxTitle, { color: colors.text }]}>Faculty proposal inbox</Text>
-                  <Text style={[styles.inboxSubtitle, { color: colors.textMuted }]}>Review and manage all research submissions in one place.</Text>
+                  <Text style={[styles.inboxTitle, { color: colors.text }]}>Proposal approvals</Text>
+                  <Text style={[styles.inboxSubtitle, { color: colors.textMuted }]}>Screen faculty submissions and issue a recorded decision.</Text>
                 </View>
                 <View style={[styles.totalBadge, { backgroundColor: colors.primarySoft }]}>
-                  <Text style={[styles.totalBadgeNumber, { color: colors.primary }]}>{proposals.length}</Text>
-                  <Text style={[styles.totalBadgeLabel, { color: colors.primary }]}>TOTAL</Text>
+                  <Text style={[styles.totalBadgeNumber, { color: colors.primary }]}>{pendingProposals.length}</Text>
+                  <Text style={[styles.totalBadgeLabel, { color: colors.primary }]}>AWAITING</Text>
                 </View>
+              </View>
+
+              <View style={styles.queueSummary}>
+                {[
+                  {
+                    background: colors.primarySoft,
+                    color: colors.primary,
+                    icon: 'time-outline' as const,
+                    label: 'Awaiting',
+                    value: pendingProposals.length,
+                  },
+                  {
+                    background: isDark ? '#3A2D15' : '#FFF0CF',
+                    color: isDark ? '#F4C85D' : '#946200',
+                    icon: 'refresh-outline' as const,
+                    label: 'Revision',
+                    value: revisionCount,
+                  },
+                  {
+                    background: isDark ? '#0D362B' : '#DCF5E6',
+                    color: isDark ? '#62E6A0' : '#177441',
+                    icon: 'checkmark-circle-outline' as const,
+                    label: 'Approved',
+                    value: approvedCount,
+                  },
+                ].map((metric) => (
+                  <View
+                    key={metric.label}
+                    style={[
+                      styles.queueMetric,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                    ]}>
+                    <View style={[styles.queueMetricIcon, { backgroundColor: metric.background }]}>
+                      <Ionicons name={metric.icon} size={17} color={metric.color} />
+                    </View>
+                    <Text style={[styles.queueMetricValue, { color: colors.text }]}>{metric.value}</Text>
+                    <Text style={[styles.queueMetricLabel, { color: colors.textMuted }]}>{metric.label}</Text>
+                  </View>
+                ))}
               </View>
 
               <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -301,6 +413,7 @@ export default function ResearchHeadScreen() {
                   const selected = filter === item;
                   return (
                     <Pressable
+                      accessibilityState={{ selected }}
                       key={item}
                       onPress={() => setFilter(item)}
                       style={({ pressed }) => [
@@ -354,6 +467,10 @@ export default function ResearchHeadScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  decisionToast: { alignItems: 'center', borderRadius: 14, borderWidth: 1, flexDirection: 'row', gap: 10, left: 16, paddingHorizontal: 14, paddingVertical: 12, position: 'absolute', right: 16, zIndex: 50 },
+  decisionToastCopy: { flex: 1 },
+  decisionToastTitle: { fontSize: 12, fontWeight: '800' },
+  decisionToastBody: { fontSize: 9, marginTop: 2 },
   header: { borderBottomWidth: 1 },
   headerInner: { alignItems: 'center', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', maxWidth: 1160, paddingHorizontal: 20, paddingVertical: 13, width: '100%' },
   headerLeft: { alignItems: 'center', flexDirection: 'row', gap: 12 },
@@ -426,6 +543,11 @@ const styles = StyleSheet.create({
   totalBadge: { alignItems: 'center', alignSelf: 'flex-start', borderRadius: 14, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 9 },
   totalBadgeNumber: { fontSize: 17, fontWeight: '800' },
   totalBadgeLabel: { fontSize: 8, fontWeight: '800', letterSpacing: 1 },
+  queueSummary: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 20 },
+  queueMetric: { alignItems: 'center', borderRadius: 15, borderWidth: 1, flexBasis: 104, flexDirection: 'row', flexGrow: 1, gap: 8, minWidth: 104, padding: 11 },
+  queueMetricIcon: { alignItems: 'center', borderRadius: 10, height: 34, justifyContent: 'center', width: 34 },
+  queueMetricValue: { fontSize: 17, fontVariant: ['tabular-nums'], fontWeight: '800' },
+  queueMetricLabel: { flex: 1, fontSize: 9, fontWeight: '700' },
   searchBox: { alignItems: 'center', borderRadius: 15, borderWidth: 1, flexDirection: 'row', gap: 10, marginTop: 25, minHeight: 52, paddingHorizontal: 15 },
   searchInput: { flex: 1, fontSize: 12, minHeight: 50 },
   filterRow: { gap: 8, paddingVertical: 14 },

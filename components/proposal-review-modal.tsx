@@ -18,19 +18,35 @@ import type { ProposalStatus, ResearchProposal } from '@/constants/research-prop
 type ProposalReviewModalProps = {
   proposal: ResearchProposal | null;
   onClose: () => void;
-  onDecision: (proposalId: string, status: ProposalStatus) => void;
+  onDecision: (proposalId: string, status: ProposalStatus, reviewNote?: string) => void;
 };
 
-function statusStyle(status: ProposalStatus) {
+function statusStyle(status: ProposalStatus, isDark: boolean) {
   switch (status) {
     case 'Approved':
-      return { background: '#DCF5E6', color: '#177441', icon: 'checkmark-circle' as const };
+      return {
+        background: isDark ? '#0D362B' : '#DCF5E6',
+        color: isDark ? '#62E6A0' : '#177441',
+        icon: 'checkmark-circle' as const,
+      };
     case 'For Revision':
-      return { background: '#FFF0CF', color: '#946200', icon: 'refresh-circle' as const };
+      return {
+        background: isDark ? '#3A2D15' : '#FFF0CF',
+        color: isDark ? '#F4C85D' : '#946200',
+        icon: 'refresh-circle' as const,
+      };
     case 'Rejected':
-      return { background: '#FADCE2', color: '#A50F30', icon: 'close-circle' as const };
+      return {
+        background: isDark ? '#3C1923' : '#FADCE2',
+        color: isDark ? '#FF8197' : '#A50F30',
+        icon: 'close-circle' as const,
+      };
     default:
-      return { background: '#E8E4FF', color: '#5541A4', icon: 'time' as const };
+      return {
+        background: isDark ? '#2B204A' : '#E8E4FF',
+        color: isDark ? '#B69CFF' : '#5541A4',
+        icon: 'time' as const,
+      };
   }
 }
 
@@ -39,18 +55,21 @@ export function ProposalReviewModal({ proposal, onClose, onDecision }: ProposalR
   const { width } = useWindowDimensions();
   const isWide = width >= 760;
   const [comment, setComment] = useState('');
+  const [confirmingApproval, setConfirmingApproval] = useState(false);
 
   useEffect(() => {
     setComment('');
+    setConfirmingApproval(false);
   }, [proposal?.id]);
 
   if (!proposal) {
     return null;
   }
 
-  const badge = statusStyle(proposal.status);
+  const badge = statusStyle(proposal.status, isDark);
+  const isFinalDecision = proposal.status === 'Approved' || proposal.status === 'Rejected';
   const decide = (status: ProposalStatus) => {
-    onDecision(proposal.id, status);
+    onDecision(proposal.id, status, comment.trim() || undefined);
     onClose();
   };
 
@@ -117,49 +136,113 @@ export function ProposalReviewModal({ proposal, onClose, onDecision }: ProposalR
               <Text style={[styles.abstract, { color: colors.textMuted }]}>{proposal.abstract}</Text>
             </View>
 
-            <View style={styles.commentSection}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Review notes</Text>
-              <Text style={[styles.commentHelper, { color: colors.textMuted }]}>Add feedback for the faculty researcher. This is a UI-only draft.</Text>
-              <TextInput
-                multiline
-                onChangeText={setComment}
-                placeholder="Write clear, actionable feedback..."
-                placeholderTextColor={colors.textMuted}
-                style={[
-                  styles.commentInput,
-                  {
-                    backgroundColor: colors.surfaceMuted,
-                    borderColor: colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                textAlignVertical="top"
-                value={comment}
-              />
-            </View>
+            {isFinalDecision ? (
+              <View style={[styles.decisionCard, { backgroundColor: badge.background, borderColor: badge.color }]}>
+                <Ionicons name={badge.icon} size={22} color={badge.color} />
+                <View style={styles.decisionCopy}>
+                  <Text style={[styles.decisionTitle, { color: badge.color }]}>Decision recorded</Text>
+                  <Text style={[styles.decisionDate, { color: colors.textMuted }]}>
+                    {proposal.decidedAt ?? 'Recorded previously'}
+                  </Text>
+                  {proposal.reviewNote && (
+                    <Text style={[styles.decisionNote, { color: colors.text }]}>{proposal.reviewNote}</Text>
+                  )}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.commentSection}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Review notes</Text>
+                <Text style={[styles.commentHelper, { color: colors.textMuted }]}>
+                  Add optional feedback to record with this decision.
+                </Text>
+                <TextInput
+                  multiline
+                  onChangeText={setComment}
+                  placeholder="Write clear, actionable feedback..."
+                  placeholderTextColor={colors.textMuted}
+                  style={[
+                    styles.commentInput,
+                    {
+                      backgroundColor: colors.surfaceMuted,
+                      borderColor: colors.border,
+                      color: colors.text,
+                    },
+                  ]}
+                  textAlignVertical="top"
+                  value={comment}
+                />
+              </View>
+            )}
           </ScrollView>
 
-          <View style={[styles.actions, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Pressable
-              onPress={() => decide('Rejected')}
-              style={({ pressed }) => [styles.iconAction, { borderColor: colors.border, opacity: pressed ? 0.6 : 1 }]}>
-              <Ionicons name="close" size={19} color={colors.primary} />
-            </Pressable>
-            <Pressable
-              onPress={() => decide('For Revision')}
-              style={({ pressed }) => [styles.revisionButton, { borderColor: colors.primary, opacity: pressed ? 0.65 : 1 }]}>
-              <Ionicons name="return-down-back" size={18} color={colors.primary} />
-              <Text style={[styles.revisionText, { color: colors.primary }]}>Return for revision</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => decide('Approved')}
-              style={({ pressed }) => [
-                styles.approveButton,
-                { backgroundColor: pressed ? colors.primaryPressed : colors.primary },
-              ]}>
-              <Ionicons name="checkmark" size={19} color="#FFFFFF" />
-              <Text style={styles.approveText}>Approve</Text>
-            </Pressable>
+          <View
+            style={[
+              styles.actions,
+              confirmingApproval && styles.confirmationActions,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}>
+            {isFinalDecision ? (
+              <Pressable
+                onPress={onClose}
+                style={({ pressed }) => [
+                  styles.doneButton,
+                  { backgroundColor: pressed ? colors.primaryPressed : colors.primary },
+                ]}>
+                <Text style={styles.approveText}>Done</Text>
+              </Pressable>
+            ) : confirmingApproval ? (
+              <>
+                <View>
+                  <Text style={[styles.confirmationTitle, { color: colors.text }]}>Approve this proposal?</Text>
+                  <Text style={[styles.confirmationBody, { color: colors.textMuted }]}>
+                    This records a final approval in the proposal queue.
+                  </Text>
+                </View>
+                <View style={styles.confirmationButtons}>
+                  <Pressable
+                    onPress={() => setConfirmingApproval(false)}
+                    style={({ pressed }) => [
+                      styles.cancelButton,
+                      { borderColor: colors.border, opacity: pressed ? 0.65 : 1 },
+                    ]}>
+                    <Text style={[styles.cancelText, { color: colors.text }]}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => decide('Approved')}
+                    style={({ pressed }) => [
+                      styles.approveButton,
+                      { backgroundColor: pressed ? '#168A54' : '#1FA968' },
+                    ]}>
+                    <Ionicons name="checkmark-circle" size={19} color="#FFFFFF" />
+                    <Text style={styles.approveText}>Confirm approval</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <>
+                <Pressable
+                  accessibilityLabel="Reject proposal"
+                  onPress={() => decide('Rejected')}
+                  style={({ pressed }) => [styles.iconAction, { borderColor: colors.border, opacity: pressed ? 0.6 : 1 }]}>
+                  <Ionicons name="close" size={19} color={colors.primary} />
+                </Pressable>
+                <Pressable
+                  onPress={() => decide('For Revision')}
+                  style={({ pressed }) => [styles.revisionButton, { borderColor: colors.primary, opacity: pressed ? 0.65 : 1 }]}>
+                  <Ionicons name="return-down-back" size={18} color={colors.primary} />
+                  <Text style={[styles.revisionText, { color: colors.primary }]}>Return for revision</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setConfirmingApproval(true)}
+                  style={({ pressed }) => [
+                    styles.approveButton,
+                    { backgroundColor: pressed ? colors.primaryPressed : colors.primary },
+                  ]}>
+                  <Ionicons name="checkmark" size={19} color="#FFFFFF" />
+                  <Text style={styles.approveText}>Approve</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         </SafeAreaView>
       </View>
@@ -195,10 +278,22 @@ const styles = StyleSheet.create({
   commentSection: { marginTop: 23 },
   commentHelper: { fontSize: 10, lineHeight: 15, marginTop: 5 },
   commentInput: { borderRadius: 14, borderWidth: 1, fontSize: 12, lineHeight: 19, marginTop: 11, minHeight: 104, padding: 13 },
+  decisionCard: { alignItems: 'flex-start', borderRadius: 14, borderWidth: 1, flexDirection: 'row', gap: 11, marginTop: 23, padding: 15 },
+  decisionCopy: { flex: 1 },
+  decisionTitle: { fontSize: 13, fontWeight: '800' },
+  decisionDate: { fontSize: 9, marginTop: 3 },
+  decisionNote: { fontSize: 11, lineHeight: 17, marginTop: 10 },
   actions: { borderTopWidth: 1, flexDirection: 'row', gap: 9, padding: 16 },
+  confirmationActions: { alignItems: 'stretch', flexDirection: 'column' },
+  confirmationTitle: { fontSize: 14, fontWeight: '800' },
+  confirmationBody: { fontSize: 10, lineHeight: 15, marginTop: 3 },
+  confirmationButtons: { flexDirection: 'row', gap: 9 },
+  cancelButton: { alignItems: 'center', borderRadius: 12, borderWidth: 1, flex: 1, justifyContent: 'center', minHeight: 48 },
+  cancelText: { fontSize: 11, fontWeight: '800' },
   iconAction: { alignItems: 'center', borderRadius: 12, borderWidth: 1, height: 48, justifyContent: 'center', width: 48 },
   revisionButton: { alignItems: 'center', borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: 'row', gap: 7, justifyContent: 'center', minHeight: 48, paddingHorizontal: 9 },
   revisionText: { fontSize: 11, fontWeight: '800' },
   approveButton: { alignItems: 'center', borderRadius: 12, flex: 1, flexDirection: 'row', gap: 7, justifyContent: 'center', minHeight: 48, paddingHorizontal: 9 },
+  doneButton: { alignItems: 'center', borderRadius: 12, flex: 1, justifyContent: 'center', minHeight: 48 },
   approveText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
 });

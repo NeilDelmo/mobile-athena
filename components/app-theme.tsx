@@ -31,15 +31,15 @@ const lightPalette: AppPalette = {
 };
 
 const darkPalette: AppPalette = {
-  background: '#160D0F',
-  surface: '#221416',
-  surfaceMuted: '#2C191C',
-  text: '#FFF7F7',
-  textMuted: '#C9AFB2',
-  primary: '#ED3158',
-  primaryPressed: '#C91B40',
-  primarySoft: '#421722',
-  border: '#4B292E',
+  background: '#0B1426',
+  surface: '#111C31',
+  surfaceMuted: '#17243A',
+  text: '#F7F9FD',
+  textMuted: '#8FA2C2',
+  primary: '#F12D3A',
+  primaryPressed: '#CB1D2C',
+  primarySoft: '#3C1822',
+  border: '#2D3C57',
   white: '#FFFFFF',
   shadow: '#000000',
 };

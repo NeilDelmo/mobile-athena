@@ -1,0 +1,21 @@
+{
+  "name": "athena-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:setup": "node scripts/setup-database.js",
+    "check": "node --check scripts/setup-database.js && node --check src/config.js && node --check src/database.js && node --check src/error-handler.js && node --check src/http-error.js && node --check src/server.js && node --check src/app.js && node --check src/routes/health.js && node --check src/routes/dashboards.js && node --check src/routes/proposals.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.22.6"
+  }
+}
