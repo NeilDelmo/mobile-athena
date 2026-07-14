@@ -1,24 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, type Href, useLocalSearchParams } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
-import { useDemoProjects } from '@/components/demo-projects-provider';
+import { useAuth } from '@/components/auth-provider';
+import { usePortalData } from '@/components/portal-data-provider';
 import { PortalPageHeader } from '@/components/portal-page-header';
 import {
   type PortalNotification,
   type PortalNotificationType,
-  type PortalRole,
 } from '@/constants/portal-content';
 
 type InboxFilter = 'All' | 'Unread';
-
-function getRole(value: string | string[] | undefined): PortalRole {
-  return value === 'research-head' ? 'research-head' : 'faculty';
-}
 
 function getNotificationTone(type: PortalNotificationType, isDark: boolean) {
   switch (type) {
@@ -56,10 +52,10 @@ function getNotificationTone(type: PortalNotificationType, isDark: boolean) {
 }
 
 export default function NotificationsScreen() {
-  const params = useLocalSearchParams<{ role?: string | string[] }>();
-  const role = getRole(params.role);
+  const { user } = useAuth();
+  const role = user?.role === 'faculty' ? 'faculty' : 'research-head';
   const { colors, isDark } = useAppTheme();
-  const { notifications, markAllNotificationsRead, markNotificationRead } = useDemoProjects();
+  const { notifications, markAllNotificationsRead, markNotificationRead } = usePortalData();
   const [filter, setFilter] = useState<InboxFilter>('All');
 
   const roleNotifications = useMemo(
@@ -74,7 +70,7 @@ export default function NotificationsScreen() {
   const fallbackHref = (role === 'research-head' ? '/research-head' : '/faculty') as Href;
 
   const openNotification = (notification: PortalNotification) => {
-    markNotificationRead(notification.id);
+    void markNotificationRead(notification.id);
     if (notification.href) {
       router.push(notification.href as Href);
     }
@@ -128,7 +124,7 @@ export default function NotificationsScreen() {
             {unreadCount > 0 && (
               <Pressable
                 accessibilityRole="button"
-                onPress={() => markAllNotificationsRead(role)}
+                onPress={() => void markAllNotificationsRead(role)}
                 style={({ pressed }) => [styles.markAllButton, { opacity: pressed ? 0.58 : 1 }]}>
                 <Ionicons name="checkmark-done" size={16} color={colors.primary} />
                 <Text style={[styles.markAllText, { color: colors.primary }]}>Mark all read</Text>

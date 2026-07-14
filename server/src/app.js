@@ -3,9 +3,13 @@ import express from 'express';
 
 import { config } from './config.js';
 import { errorHandler, notFoundHandler } from './error-handler.js';
+import { authRouter } from './routes/auth.js';
+import { chatRouter } from './routes/chat.js';
 import { dashboardRouter } from './routes/dashboards.js';
 import { healthRouter } from './routes/health.js';
+import { notificationRouter } from './routes/notifications.js';
 import { proposalRouter } from './routes/proposals.js';
+import { researchCallRouter } from './routes/research-calls.js';
 
 export const app = express();
 
@@ -23,16 +27,24 @@ app.get('/api', (request, response) => {
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
-      facultyDashboard: '/api/dashboards/faculty/:facultyId',
+      auth: '/api/auth/login',
+      chat: '/api/chat',
+      facultyDashboard: '/api/dashboards/faculty',
       researchHeadDashboard: '/api/dashboards/research-head',
       proposals: '/api/proposals',
+      researchCalls: '/api/research-calls',
+      notifications: '/api/notifications',
     },
   });
 });
 
 app.use('/api/health', healthRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/chat', chatRouter);
 app.use('/api/dashboards', dashboardRouter);
+app.use('/api/notifications', notificationRouter);
 app.use('/api/proposals', proposalRouter);
+app.use('/api/research-calls', researchCallRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

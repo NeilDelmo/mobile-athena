@@ -5,6 +5,7 @@ import { Animated, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
+import { useAuth } from '@/components/auth-provider';
 import { BrandMark } from '@/components/brand-mark';
 
 export type FacultyNavAction =
@@ -37,6 +38,7 @@ const navItems: {
 
 export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: FacultyDrawerProps) {
   const { colors, isDark } = useAppTheme();
+  const { logout, user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const drawerWidth = Math.min(width * 0.86, 340);
@@ -68,9 +70,10 @@ export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: Facu
     onSelect(action);
   };
 
-  const exitDemo = () => {
+  const signOut = async () => {
     onClose();
-    router.replace('/' as Href);
+    await logout();
+    router.replace('/login' as Href);
   };
 
   return (
@@ -112,11 +115,11 @@ export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: Facu
 
           <View style={[styles.profile, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
             <View style={[styles.avatar, { backgroundColor: isDark ? '#A743C2' : '#8F32A8' }]}>
-              <Text style={styles.avatarText}>Q</Text>
+              <Text style={styles.avatarText}>{user?.firstName?.[0]?.toUpperCase() || 'F'}</Text>
             </View>
             <View style={styles.profileCopy}>
-              <Text numberOfLines={1} style={[styles.profileName, { color: colors.text }]}>Quey Jinnet Baldos</Text>
-              <Text numberOfLines={1} style={[styles.profileEmail, { color: colors.textMuted }]}>Faculty workspace</Text>
+              <Text numberOfLines={1} style={[styles.profileName, { color: colors.text }]}>{user ? `${user.firstName} ${user.lastName}` : 'Faculty'}</Text>
+              <Text numberOfLines={1} style={[styles.profileEmail, { color: colors.textMuted }]}>{user?.email}</Text>
             </View>
           </View>
 
@@ -152,9 +155,9 @@ export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: Facu
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
             <Text style={[styles.universityNoteText, { color: colors.textMuted }]}>ATHENA faculty mobile workspace</Text>
           </View>
-          <Pressable onPress={exitDemo} style={({ pressed }) => [styles.signOut, { opacity: pressed ? 0.58 : 1 }]}>
-            <Ionicons name="arrow-back-outline" size={20} color={colors.textMuted} />
-            <Text style={[styles.signOutText, { color: colors.textMuted }]}>Exit demo</Text>
+          <Pressable onPress={signOut} style={({ pressed }) => [styles.signOut, { opacity: pressed ? 0.58 : 1 }]}>
+            <Ionicons name="log-out-outline" size={20} color={colors.textMuted} />
+            <Text style={[styles.signOutText, { color: colors.textMuted }]}>Sign out</Text>
           </Pressable>
         </Animated.View>
       </View>

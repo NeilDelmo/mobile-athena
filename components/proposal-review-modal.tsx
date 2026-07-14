@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -18,7 +19,7 @@ import type { ProposalStatus, ResearchProposal } from '@/constants/research-prop
 type ProposalReviewModalProps = {
   proposal: ResearchProposal | null;
   onClose: () => void;
-  onDecision: (proposalId: string, status: ProposalStatus, reviewNote?: string) => void;
+  onDecision: (proposalId: string, status: ProposalStatus, reviewNote?: string) => Promise<void>;
 };
 
 function statusStyle(status: ProposalStatus, isDark: boolean) {
@@ -56,10 +57,12 @@ export function ProposalReviewModal({ proposal, onClose, onDecision }: ProposalR
   const isWide = width >= 760;
   const [comment, setComment] = useState('');
   const [confirmingApproval, setConfirmingApproval] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setComment('');
     setConfirmingApproval(false);
+    setIsSaving(false);
   }, [proposal?.id]);
 
   if (!proposal) {
@@ -68,9 +71,16 @@ export function ProposalReviewModal({ proposal, onClose, onDecision }: ProposalR
 
   const badge = statusStyle(proposal.status, isDark);
   const isFinalDecision = proposal.status === 'Approved' || proposal.status === 'Rejected';
-  const decide = (status: ProposalStatus) => {
-    onDecision(proposal.id, status, comment.trim() || undefined);
-    onClose();
+  const decide = async (status: ProposalStatus) => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await onDecision(proposal.id, status, comment.trim() || undefined);
+      onClose();
+    } catch (error) {
+      Alert.alert('Decision not saved', error instanceof Error ? error.message : 'Please try again.');
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -208,7 +218,8 @@ export function ProposalReviewModal({ proposal, onClose, onDecision }: ProposalR
                     <Text style={[styles.cancelText, { color: colors.text }]}>Cancel</Text>
                   </Pressable>
                   <Pressable
-                    onPress={() => decide('Approved')}
+                    disabled={isSaving}
+                    onPress={() => void decide('Approved')}
                     style={({ pressed }) => [
                       styles.approveButton,
                       { backgroundColor: pressed ? '#168A54' : '#1FA968' },
@@ -222,12 +233,14 @@ export function ProposalReviewModal({ proposal, onClose, onDecision }: ProposalR
               <>
                 <Pressable
                   accessibilityLabel="Reject proposal"
-                  onPress={() => decide('Rejected')}
+                  disabled={isSaving}
+                  onPress={() => void decide('Rejected')}
                   style={({ pressed }) => [styles.iconAction, { borderColor: colors.border, opacity: pressed ? 0.6 : 1 }]}>
                   <Ionicons name="close" size={19} color={colors.primary} />
                 </Pressable>
                 <Pressable
-                  onPress={() => decide('For Revision')}
+                  disabled={isSaving}
+                  onPress={() => void decide('For Revision')}
                   style={({ pressed }) => [styles.revisionButton, { borderColor: colors.primary, opacity: pressed ? 0.65 : 1 }]}>
                   <Ionicons name="return-down-back" size={18} color={colors.primary} />
                   <Text style={[styles.revisionText, { color: colors.primary }]}>Return for revision</Text>

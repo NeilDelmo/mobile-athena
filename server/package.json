@@ -10,7 +10,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "db:setup": "node scripts/setup-database.js",
-    "check": "node --check scripts/setup-database.js && node --check src/config.js && node --check src/database.js && node --check src/error-handler.js && node --check src/http-error.js && node --check src/server.js && node --check src/app.js && node --check src/routes/health.js && node --check src/routes/dashboards.js && node --check src/routes/proposals.js"
+    "check": "node --check scripts/setup-database.js && node --check src/auth-crypto.js && node --check src/auth-middleware.js && node --check src/config.js && node --check src/database.js && node --check src/error-handler.js && node --check src/http-error.js && node --check src/server.js && node --check src/app.js && node --check src/routes/auth.js && node --check src/routes/health.js && node --check src/routes/chat.js && node --check src/routes/dashboards.js && node --check src/routes/notifications.js && node --check src/routes/proposals.js && node --check src/routes/research-calls.js"
   },
   "dependencies": {
     "cors": "^2.8.6",

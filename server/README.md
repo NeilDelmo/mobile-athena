@@ -13,7 +13,7 @@ This is the local API and database for the ATHENA Expo app. It uses Express 5 an
    npm install
    ```
 
-5. Create the database, tables, and demo data:
+5. Create the database, tables, and initial local records:
 
    ```powershell
    npm run db:setup
@@ -44,25 +44,67 @@ Do not place `DB_PASSWORD` or any other database credential in an `EXPO_PUBLIC_`
 ## Included API routes
 
 - `GET /api/health`
-- `GET /api/dashboards/faculty/:facultyId`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+- `POST /api/chat`
+- `GET /api/dashboards/faculty`
 - `GET /api/dashboards/research-head`
 - `GET /api/proposals`
 - `GET /api/proposals/:proposalId`
 - `POST /api/proposals`
 - `PATCH /api/proposals/:proposalId/decision`
+- `GET /api/research-calls`
+- `GET /api/research-calls/:researchCallId`
+- `POST /api/research-calls`
+- `PATCH /api/research-calls/:researchCallId`
+- `PATCH /api/research-calls/:researchCallId/status`
+- `GET /api/notifications`
+- `PATCH /api/notifications/:notificationId/read`
+- `PATCH /api/notifications/read-all`
+
+All routes except health and login require `Authorization: Bearer <session token>`.
+Faculty IDs and reviewer IDs are derived from the authenticated database account.
 
 The approval endpoint expects:
 
 ```json
 {
-  "reviewerId": 2,
   "decision": "approved",
   "comments": "Approved for implementation."
 }
 ```
 
-The seeded demo users are Faculty ID `1` and Research Head ID `2`.
+The initialized accounts are:
+
+- Faculty: `quey.baldos@g.batstate-u.edu.ph`
+- Research Head: `mary.baldos@g.batstate-u.edu.ph`
+- Local password: the `DEMO_ACCOUNT_PASSWORD` value used during initial setup
+
+The login endpoint accepts only registered, active accounts under
+`@g.batstate-u.edu.ph`. Passwords are stored as salted scrypt hashes and login
+sessions are represented by opaque, expiring bearer tokens.
+
+## Ask Athena
+
+Set a private `GROQ_API_KEY` in `server/.env`, then send chat messages to
+`POST /api/chat`:
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "What should I prepare before submitting a proposal?" }
+  ]
+}
+```
+
+The Expo app calls this authenticated server route and never receives the Groq
+key. Do not expose the local API to the public internet without production
+hardening and rate limiting.
 
 ## Important limitation
 
-Authentication is intentionally not added yet. IDs in request bodies are suitable only for the current local demo. Before deployment, authenticate users on the server and derive `facultyId` or `reviewerId` from the verified session instead of trusting values sent by the app.
+This is deliberately a simple local authentication system, not university
+single sign-on. Restricting the email suffix does not prove ownership of a
+BatStateU mailbox; only pre-created database accounts can sign in. Use the
+university identity provider before any real deployment.

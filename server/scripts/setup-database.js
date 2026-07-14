@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
 import mysql from 'mysql2/promise';
 
+import { hashPassword } from '../src/auth-crypto.js';
+
 const databaseName = process.env.DB_NAME ?? 'athena_research';
 
 if (!/^[a-zA-Z0-9_]+$/.test(databaseName)) {
@@ -25,7 +27,17 @@ const connection = await mysql.createConnection({
 
 try {
   await connection.query(schema);
+  const demoPassword = process.env.DEMO_ACCOUNT_PASSWORD ?? 'AthenaDemo2026!';
+  const passwordHash = await hashPassword(demoPassword);
+  await connection.query(
+    `UPDATE \`${databaseName}\`.users
+        SET password_hash = ?
+      WHERE email LIKE '%@g.batstate-u.edu.ph'
+        AND password_hash IS NULL`,
+    [passwordHash],
+  );
   console.log(`Database ${databaseName} is ready.`);
+  console.log('University demo accounts are ready. Change DEMO_ACCOUNT_PASSWORD before sharing the server.');
 } finally {
   await connection.end();
 }

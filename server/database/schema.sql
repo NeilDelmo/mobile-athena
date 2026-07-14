@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   university_id VARCHAR(50) NULL,
   google_subject VARCHAR(255) NULL,
+  password_hash VARCHAR(255) NULL,
   email VARCHAR(191) NOT NULL,
   first_name VARCHAR(100) NOT NULL,
   middle_name VARCHAR(100) NULL,
@@ -24,10 +25,29 @@ CREATE TABLE IF NOT EXISTS users (
   KEY idx_users_role_active (role, is_active)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_auth_sessions_token_hash (token_hash),
+  KEY idx_auth_sessions_user_expiry (user_id, expires_at),
+  CONSTRAINT fk_auth_sessions_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS research_calls (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
+  sponsor VARCHAR(180) NOT NULL DEFAULT 'BatStateU Research Office',
   description TEXT NOT NULL,
+  budget VARCHAR(120) NULL,
+  category VARCHAR(120) NULL,
+  eligibility TEXT NULL,
   opens_at DATETIME NULL,
   closes_at DATETIME NULL,
   status ENUM('draft', 'open', 'closed') NOT NULL DEFAULT 'draft',
@@ -146,6 +166,30 @@ CREATE TABLE IF NOT EXISTS proposal_status_history (
     ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  type ENUM('announcement', 'deadline', 'decision', 'revision', 'submission') NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  href VARCHAR(500) NULL,
+  proposal_id BIGINT UNSIGNED NULL,
+  research_call_id BIGINT UNSIGNED NULL,
+  read_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_notifications_user_read (user_id, read_at, created_at),
+  CONSTRAINT fk_notifications_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_notifications_proposal
+    FOREIGN KEY (proposal_id) REFERENCES proposals (id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_notifications_research_call
+    FOREIGN KEY (research_call_id) REFERENCES research_calls (id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 INSERT INTO users
   (id, university_id, email, first_name, last_name, role, department)
 VALUES
@@ -174,11 +218,37 @@ ON DUPLICATE KEY UPDATE
   status = VALUES(status),
   is_featured = VALUES(is_featured);
 
+INSERT INTO research_calls
+  (id, title, sponsor, description, budget, category, eligibility, opens_at, closes_at, status, created_by)
+VALUES
+  (1, '2026 Faculty Research Grant', 'BatStateU Research Office',
+   'Supports faculty-led studies that address university priorities and demonstrate measurable impact.',
+   'Up to PHP 250,000', 'Institutional Research',
+   'Full-time faculty members and faculty-led multidisciplinary teams.',
+   '2026-07-01 08:00:00', '2026-07-20 17:00:00', 'open', 2),
+  (2, 'Sustainable Campus Innovation Call', 'University Innovation Council',
+   'Invites applied research on energy, mobility, waste reduction, climate resilience, and sustainable campus operations.',
+   'Up to PHP 180,000', 'Sustainability',
+   'Faculty researchers from any college, with student participation encouraged.',
+   '2026-07-10 08:00:00', '2026-08-15 17:00:00', 'open', 2)
+ON DUPLICATE KEY UPDATE
+  title = VALUES(title),
+  sponsor = VALUES(sponsor),
+  description = VALUES(description),
+  budget = VALUES(budget),
+  category = VALUES(category),
+  eligibility = VALUES(eligibility),
+  opens_at = VALUES(opens_at),
+  closes_at = VALUES(closes_at),
+  status = VALUES(status);
+
 INSERT INTO proposals
   (id, reference_no, faculty_id, title, abstract_text, keywords, study_type, department, status, submitted_at)
 VALUES
   (1, 'ATH-2026-0001', 3, 'Smart Campus Energy Monitoring Using Edge Sensors', 'A study on real-time energy monitoring and evidence-based conservation strategies for campus facilities.', JSON_ARRAY('energy', 'IoT', 'smart campus'), 'Institutional Research', 'College of Engineering', 'submitted', NOW()),
-  (2, 'ATH-2026-0002', 4, 'Community Disaster Preparedness and Digital Information Access', 'An assessment of community access to verified digital information during severe weather and disaster events.', JSON_ARRAY('disaster preparedness', 'digital access'), 'Community-Based Research', 'College of Arts and Sciences', 'under_evaluation', NOW())
+  (2, 'ATH-2026-0002', 4, 'Community Disaster Preparedness and Digital Information Access', 'An assessment of community access to verified digital information during severe weather and disaster events.', JSON_ARRAY('disaster preparedness', 'digital access'), 'Community-Based Research', 'College of Arts and Sciences', 'under_evaluation', NOW()),
+  (3, 'ATH-2026-0003', 1, 'AI-Assisted Student Support Framework', 'An ethical decision-support framework for early academic interventions with faculty oversight and privacy safeguards.', JSON_ARRAY('student support', 'AI ethics'), 'Education Technology', 'College of Informatics and Computing Sciences', 'revision_required', NOW()),
+  (4, 'ATH-2026-0004', 1, 'Digital Archive of Indigenous Knowledge', 'A community-governed archive for preserving oral histories and cultural materials with consent-based access.', JSON_ARRAY('digital archive', 'indigenous knowledge'), 'Culture and Heritage', 'College of Informatics and Computing Sciences', 'approved', NOW())
 ON DUPLICATE KEY UPDATE
   title = VALUES(title),
   abstract_text = VALUES(abstract_text),
@@ -187,9 +257,41 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO proposal_status_history
   (proposal_id, from_status, to_status, changed_by, note)
-SELECT p.id, NULL, p.status, p.faculty_id, 'Initial demo submission.'
+SELECT p.id, NULL, p.status, p.faculty_id, 'Initial database record.'
 FROM proposals p
-WHERE p.id IN (1, 2)
+WHERE p.id IN (1, 2, 3, 4)
   AND NOT EXISTS (
     SELECT 1 FROM proposal_status_history h WHERE h.proposal_id = p.id
   );
+
+INSERT INTO proposal_reviews
+  (proposal_id, reviewer_id, decision, comments)
+SELECT 3, 2, 'revision_required', 'Clarify the consent process and add specific data-retention safeguards.'
+WHERE NOT EXISTS (
+  SELECT 1 FROM proposal_reviews WHERE proposal_id = 3 AND decision = 'revision_required'
+);
+
+INSERT INTO proposal_reviews
+  (proposal_id, reviewer_id, decision, comments)
+SELECT 4, 2, 'approved', 'Approved for implementation with the documented community-consent safeguards.'
+WHERE NOT EXISTS (
+  SELECT 1 FROM proposal_reviews WHERE proposal_id = 4 AND decision = 'approved'
+);
+
+INSERT INTO notifications
+  (user_id, type, title, message, href, proposal_id, read_at)
+SELECT 1, 'revision', 'Revision requested',
+       'The Research Head requested methodology and consent revisions for ATH-2026-0003.',
+       '/faculty-project/ATH-2026-0003', 3, NULL
+WHERE NOT EXISTS (
+  SELECT 1 FROM notifications WHERE user_id = 1 AND proposal_id = 3 AND type = 'revision'
+);
+
+INSERT INTO notifications
+  (user_id, type, title, message, href, proposal_id, read_at)
+SELECT 2, 'submission', 'Proposal ready for screening',
+       'ATH-2026-0001 is waiting for institutional evaluation.',
+       '/research-head', 1, NULL
+WHERE NOT EXISTS (
+  SELECT 1 FROM notifications WHERE user_id = 2 AND proposal_id = 1 AND type = 'submission'
+);

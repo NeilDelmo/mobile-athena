@@ -6,7 +6,7 @@ import Animated, { FadeInDown, FadeOutUp, ReduceMotion } from 'react-native-rean
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme, type AppPalette } from '@/components/app-theme';
-import { useDemoProjects } from '@/components/demo-projects-provider';
+import { usePortalData } from '@/components/portal-data-provider';
 import { ProposalReviewModal } from '@/components/proposal-review-modal';
 import { ResearchHeadDrawer, type ResearchHeadView } from '@/components/research-head-drawer';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -107,7 +107,7 @@ function ProposalCard({ proposal, onOpen }: ProposalCardProps) {
 
 export default function ResearchHeadScreen() {
   const { colors, isDark } = useAppTheme();
-  const { notifications, projects: proposals, recordDecision } = useDemoProjects();
+  const { notifications, projects: proposals, recordDecision } = usePortalData();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
@@ -154,8 +154,8 @@ export default function ResearchHeadScreen() {
     return () => clearTimeout(timer);
   }, [decisionNotice]);
 
-  const handleDecision = (proposalId: string, status: ProposalStatus, reviewNote?: string) => {
-    recordDecision(proposalId, status, reviewNote);
+  const handleDecision = async (proposalId: string, status: ProposalStatus, reviewNote?: string) => {
+    await recordDecision(proposalId, status, reviewNote);
     setDecisionNotice({ id: proposalId, status });
   };
 

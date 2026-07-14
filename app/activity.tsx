@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, type Href, useLocalSearchParams } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
-import { useDemoProjects } from '@/components/demo-projects-provider';
+import { useAuth } from '@/components/auth-provider';
+import { usePortalData } from '@/components/portal-data-provider';
 import { PortalPageHeader } from '@/components/portal-page-header';
-import { type PortalRole } from '@/constants/portal-content';
 import { type ProjectTimelineItem, type ResearchProposal } from '@/constants/research-proposals';
 
 type ActivityFilter = 'All' | 'Decisions' | 'Submissions';
@@ -19,13 +19,9 @@ type ActivityItem = ProjectTimelineItem & {
   sortValue: number;
 };
 
-function getRole(value: string | string[] | undefined): PortalRole {
-  return value === 'research-head' ? 'research-head' : 'faculty';
-}
-
 function getSortValue(date: string, project: ResearchProposal) {
   if (['Recorded today', 'In progress', 'Action required'].includes(date)) {
-    return new Date('2026-07-13T23:59:00+08:00').getTime();
+    return Date.now();
   }
 
   const parsed = Date.parse(date);
@@ -46,10 +42,10 @@ function matchesFilter(item: ActivityItem, filter: ActivityFilter) {
 }
 
 export default function ActivityScreen() {
-  const params = useLocalSearchParams<{ role?: string | string[] }>();
-  const role = getRole(params.role);
+  const { user } = useAuth();
+  const role = user?.role === 'faculty' ? 'faculty' : 'research-head';
   const { colors } = useAppTheme();
-  const { projects } = useDemoProjects();
+  const { projects } = usePortalData();
   const [filter, setFilter] = useState<ActivityFilter>('All');
   const fallbackHref = (role === 'research-head' ? '/research-head' : '/faculty') as Href;
 

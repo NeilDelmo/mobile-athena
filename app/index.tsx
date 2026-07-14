@@ -111,7 +111,7 @@ export default function GetStartedScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push('/faculty' as Href)}
+              onPress={() => router.push('/login' as Href)}
               style={({ pressed }) => [
                 styles.primaryButton,
                 {

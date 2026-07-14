@@ -1,12 +1,14 @@
 import { Router } from 'express';
 
+import { requireAuth, requireRole } from '../auth-middleware.js';
 import { pool } from '../database.js';
-import { HttpError, requirePositiveInteger } from '../http-error.js';
 
 export const dashboardRouter = Router();
 
-dashboardRouter.get('/faculty/:facultyId', async (request, response) => {
-  const facultyId = requirePositiveInteger(request.params.facultyId, 'facultyId');
+dashboardRouter.use(requireAuth);
+
+dashboardRouter.get('/faculty', requireRole('faculty'), async (request, response) => {
+  const facultyId = request.user.id;
 
   const [users] = await pool.execute(
     `SELECT id, first_name AS firstName, last_name AS lastName, email, department
@@ -14,10 +16,6 @@ dashboardRouter.get('/faculty/:facultyId', async (request, response) => {
       WHERE id = ? AND role = 'faculty' AND is_active = TRUE`,
     [facultyId],
   );
-
-  if (users.length === 0) {
-    throw new HttpError(404, 'Faculty user not found.', 'FACULTY_NOT_FOUND');
-  }
 
   const [[stats], [proposals], [notices]] = await Promise.all([
     pool.execute(
@@ -65,7 +63,10 @@ dashboardRouter.get('/faculty/:facultyId', async (request, response) => {
   });
 });
 
-dashboardRouter.get('/research-head', async (request, response) => {
+dashboardRouter.get(
+  '/research-head',
+  requireRole('research_head', 'admin'),
+  async (request, response) => {
   const [[stats], [proposals]] = await Promise.all([
     pool.query(
       `SELECT
@@ -96,5 +97,6 @@ dashboardRouter.get('/research-head', async (request, response) => {
     ),
   ]);
 
-  response.json({ stats: stats[0], proposals });
-});
+    response.json({ stats: stats[0], proposals });
+  },
+);

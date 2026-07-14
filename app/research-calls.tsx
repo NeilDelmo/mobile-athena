@@ -1,25 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
-import { type Href, useLocalSearchParams } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
+import { useAuth } from '@/components/auth-provider';
 import { PortalPageHeader } from '@/components/portal-page-header';
-import {
-  researchCalls,
-  type PortalRole,
-  type ResearchCallStatus,
-} from '@/constants/portal-content';
+import { usePortalData } from '@/components/portal-data-provider';
+import { type ResearchCallStatus } from '@/constants/portal-content';
 
 type CallFilter = 'All' | ResearchCallStatus;
 
-function getRole(value: string | string[] | undefined): PortalRole {
-  return value === 'research-head' ? 'research-head' : 'faculty';
-}
-
 function getCallTone(status: ResearchCallStatus, isDark: boolean) {
+  if (status === 'Draft' || status === 'Closed') {
+    return {
+      background: isDark ? '#302C2D' : '#EEE9EA',
+      color: isDark ? '#C8BEC0' : '#65595B',
+      icon: status === 'Draft' ? ('document-outline' as const) : ('lock-closed-outline' as const),
+    };
+  }
   if (status === 'Closing Soon') {
     return {
       background: isDark ? '#432510' : '#FFF0D8',
@@ -44,16 +45,18 @@ function getCallTone(status: ResearchCallStatus, isDark: boolean) {
 }
 
 export default function ResearchCallsScreen() {
-  const params = useLocalSearchParams<{ role?: string | string[] }>();
-  const role = getRole(params.role);
+  const { user } = useAuth();
+  const { researchCalls } = usePortalData();
+  const role = user?.role === 'faculty' ? 'faculty' : 'research-head';
   const { colors, isDark } = useAppTheme();
   const [filter, setFilter] = useState<CallFilter>('All');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const fallbackHref = (role === 'research-head' ? '/research-head' : '/faculty') as Href;
-  const filters: CallFilter[] = ['All', 'Open', 'Closing Soon', 'Upcoming'];
+  const filters: CallFilter[] = role === 'research-head'
+    ? ['All', 'Draft', 'Open', 'Closing Soon', 'Upcoming', 'Closed']
+    : ['All', 'Open', 'Closing Soon', 'Upcoming', 'Closed'];
   const visibleCalls = useMemo(
     () => (filter === 'All' ? researchCalls : researchCalls.filter((call) => call.status === filter)),
-    [filter],
+    [filter, researchCalls],
   );
 
   return (
@@ -73,7 +76,7 @@ export default function ResearchCallsScreen() {
             <View style={styles.heroCopy}>
               <Text selectable style={[styles.pageTitle, { color: colors.text }]}>Funding and research opportunities</Text>
               <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-                Browse active institutional calls on mobile. Proposal preparation and submission remain in the web portal.
+                Browse institutional opportunities loaded from ATHENA. The Research Head can manage calls here.
               </Text>
             </View>
           </Animated.View>
@@ -104,27 +107,37 @@ export default function ResearchCallsScreen() {
           </ScrollView>
 
           <View style={styles.resultsRow}>
-            <Text style={[styles.resultsText, { color: colors.textMuted }]}>{visibleCalls.length} opportunities</Text>
-            <Text style={[styles.resultsText, { color: colors.textMuted }]}>Updated July 13, 2026</Text>
+            <View>
+              <Text style={[styles.resultsText, { color: colors.textMuted }]}>{visibleCalls.length} opportunities</Text>
+              <Text style={[styles.resultsText, { color: colors.textMuted }]}>Synced with the database</Text>
+            </View>
+            {role === 'research-head' && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/research-call-create' as Href)}
+                style={({ pressed }) => [styles.createButton, { backgroundColor: colors.primary, opacity: pressed ? 0.72 : 1 }]}>
+                <Ionicons name="add" size={17} color="#FFFFFF" />
+                <Text style={styles.createButtonText}>Create research call</Text>
+              </Pressable>
+            )}
           </View>
 
           <View style={styles.callList}>
             {visibleCalls.map((call, index) => {
               const tone = getCallTone(call.status, isDark);
-              const expanded = expandedId === call.id;
               return (
                 <Animated.View
                   entering={FadeInDown.delay(index * 50).duration(310).reduceMotion(ReduceMotion.System)}
                   key={call.id}>
                   <Pressable
+                    accessibilityLabel={`View ${call.id}: ${call.title}`}
                     accessibilityRole="button"
-                    accessibilityState={{ expanded }}
-                    onPress={() => setExpandedId(expanded ? null : call.id)}
+                    onPress={() => router.push(`/research-call/${call.databaseId}` as Href)}
                     style={({ pressed }) => [
                       styles.callCard,
                       {
                         backgroundColor: colors.surface,
-                        borderColor: expanded ? colors.primary : colors.border,
+                        borderColor: colors.border,
                         opacity: pressed ? 0.76 : 1,
                       },
                     ]}>
@@ -158,25 +171,19 @@ export default function ResearchCallsScreen() {
                           <Text selectable style={[styles.metaValue, { color: colors.text }]}>{call.budget}</Text>
                         </View>
                       </View>
-                      <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                     </View>
-
-                    {expanded && (
-                      <View style={[styles.expandedContent, { borderColor: colors.border }]}>
-                        <Text style={[styles.detailLabel, { color: colors.primary }]}>{call.category.toUpperCase()}</Text>
-                        <Text selectable style={[styles.description, { color: colors.text }]}>{call.description}</Text>
-                        <Text style={[styles.detailHeading, { color: colors.text }]}>Eligibility</Text>
-                        <Text selectable style={[styles.eligibility, { color: colors.textMuted }]}>{call.eligibility}</Text>
-                        <View style={[styles.webNote, { backgroundColor: colors.surfaceMuted }]}>
-                          <Ionicons name="desktop-outline" size={17} color={colors.primary} />
-                          <Text style={[styles.webNoteText, { color: colors.textMuted }]}>Use the ATHENA web portal to prepare and submit an application.</Text>
-                        </View>
-                      </View>
-                    )}
                   </Pressable>
                 </Animated.View>
               );
             })}
+            {visibleCalls.length === 0 && (
+              <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Ionicons name="megaphone-outline" size={28} color={colors.primary} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>No research calls in this view</Text>
+                <Text style={[styles.emptyBody, { color: colors.textMuted }]}>Try another status filter or create a new call.</Text>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -198,6 +205,8 @@ const styles = StyleSheet.create({
   filterText: { fontSize: 10, fontWeight: '800' },
   resultsRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   resultsText: { fontSize: 9, fontWeight: '700' },
+  createButton: { alignItems: 'center', borderRadius: 14, flexDirection: 'row', gap: 7, paddingHorizontal: 13, paddingVertical: 10 },
+  createButtonText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
   callList: { gap: 12, paddingTop: 12 },
   callCard: { borderCurve: 'continuous', borderRadius: 20, borderWidth: 1, padding: 17 },
   callTopRow: { alignItems: 'flex-start', flexDirection: 'row', gap: 12 },
@@ -213,11 +222,7 @@ const styles = StyleSheet.create({
   metaItem: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 8 },
   metaLabel: { fontSize: 7, fontWeight: '900', letterSpacing: 0.7 },
   metaValue: { fontSize: 10, fontWeight: '700', marginTop: 2 },
-  expandedContent: { borderTopWidth: 1, marginTop: 16, paddingTop: 16 },
-  detailLabel: { fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
-  description: { fontSize: 11, lineHeight: 18, marginTop: 8 },
-  detailHeading: { fontSize: 11, fontWeight: '800', marginTop: 15 },
-  eligibility: { fontSize: 10, lineHeight: 16, marginTop: 5 },
-  webNote: { alignItems: 'center', borderRadius: 13, flexDirection: 'row', gap: 9, marginTop: 16, padding: 12 },
-  webNoteText: { flex: 1, fontSize: 9, lineHeight: 14 },
+  emptyState: { alignItems: 'center', borderRadius: 18, borderWidth: 1, padding: 30 },
+  emptyTitle: { fontSize: 13, fontWeight: '800', marginTop: 10 },
+  emptyBody: { fontSize: 9, marginTop: 5, textAlign: 'center' },
 });

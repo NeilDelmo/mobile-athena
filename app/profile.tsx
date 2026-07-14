@@ -1,41 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
-import { type Href, useLocalSearchParams } from 'expo-router';
+import { type Href } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
+import { useAuth } from '@/components/auth-provider';
 import { PortalPageHeader } from '@/components/portal-page-header';
-import { type PortalRole } from '@/constants/portal-content';
-
-function getRole(value: string | string[] | undefined): PortalRole {
-  return value === 'research-head' ? 'research-head' : 'faculty';
-}
 
 export default function ProfileScreen() {
-  const params = useLocalSearchParams<{ role?: string | string[] }>();
-  const role = getRole(params.role);
+  const { user } = useAuth();
   const { colors, isDark, toggleTheme } = useAppTheme();
   const [decisionUpdates, setDecisionUpdates] = useState(true);
   const [deadlineReminders, setDeadlineReminders] = useState(true);
-  const isResearchHead = role === 'research-head';
+  const isResearchHead = user?.role !== 'faculty';
   const fallbackHref = (isResearchHead ? '/research-head' : '/faculty') as Href;
-  const profile = isResearchHead
-    ? {
-        initials: 'RH',
-        name: 'Research Head',
-        email: 'research@athena.edu',
-        role: 'Research Head',
-        department: 'Research and Development Office',
-      }
-    : {
-        initials: 'QB',
-        name: 'Quey Jinnet Baldos',
-        email: 'quey.baldos@athena.edu',
-        role: 'Faculty Researcher',
-        department: 'College of Informatics and Computing Sciences',
-      };
+  const profile = {
+    initials: `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase(),
+    name: user ? `${user.firstName} ${user.lastName}` : 'ATHENA User',
+    email: user?.email || '',
+    role: user?.role.replaceAll('_', ' ') || '',
+    department: user?.department || 'Not assigned',
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
@@ -155,9 +142,9 @@ export default function ProfileScreen() {
           <View style={[styles.systemNote, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
             <Ionicons name="server-outline" size={20} color={colors.primary} />
             <View style={styles.systemNoteCopy}>
-              <Text style={[styles.systemNoteTitle, { color: colors.text }]}>Account synchronization</Text>
+              <Text style={[styles.systemNoteTitle, { color: colors.text }]}>Database-backed account</Text>
               <Text style={[styles.systemNoteBody, { color: colors.textMuted }]}>
-                Profile and preference changes are ready to be connected to the Express and MySQL account API when authentication is enabled.
+                Your institutional identity and assigned role were loaded from the ATHENA MySQL database.
               </Text>
             </View>
           </View>

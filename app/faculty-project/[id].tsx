@@ -5,17 +5,9 @@ import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
-import { useDemoProjects } from '@/components/demo-projects-provider';
+import { usePortalData } from '@/components/portal-data-provider';
 import { ThemeToggle } from '@/components/theme-toggle';
-import {
-  getFacultyStatusLabel,
-  initialResearchProposals,
-  type ProposalStatus,
-} from '@/constants/research-proposals';
-
-export function generateStaticParams() {
-  return initialResearchProposals.map((project) => ({ id: project.id }));
-}
+import { getFacultyStatusLabel, type ProposalStatus } from '@/constants/research-proposals';
 
 function getStatusTone(status: ProposalStatus, isDark: boolean) {
   if (status === 'Approved') {
@@ -35,7 +27,7 @@ function getStatusTone(status: ProposalStatus, isDark: boolean) {
 
 export default function FacultyProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { projects } = useDemoProjects();
+  const { projects } = usePortalData();
   const { colors, isDark } = useAppTheme();
   const { width } = useWindowDimensions();
   const isWide = width >= 820;
@@ -55,7 +47,7 @@ export default function FacultyProjectDetailScreen() {
         <View style={styles.notFound}>
           <Ionicons name="search-outline" size={34} color={colors.primary} />
           <Text selectable style={[styles.notFoundTitle, { color: colors.text }]}>Project not found</Text>
-          <Text style={[styles.notFoundBody, { color: colors.textMuted }]}>This demo project may no longer be available.</Text>
+          <Text style={[styles.notFoundBody, { color: colors.textMuted }]}>This project may no longer be available.</Text>
           <Pressable onPress={() => router.replace('/faculty-projects' as Href)}>
             <Text style={[styles.notFoundLink, { color: colors.primary }]}>Return to My Projects</Text>
           </Pressable>
@@ -100,8 +92,8 @@ export default function FacultyProjectDetailScreen() {
                 <Text style={[styles.statusText, { color: tone.color }]}>{getFacultyStatusLabel(project.status)}</Text>
               </View>
               <View style={[styles.demoBadge, { backgroundColor: colors.surfaceMuted }]}>
-                <Ionicons name="flask-outline" size={13} color={colors.textMuted} />
-                <Text style={[styles.demoText, { color: colors.textMuted }]}>DEMO</Text>
+                <Ionicons name="server-outline" size={13} color={colors.textMuted} />
+                <Text style={[styles.demoText, { color: colors.textMuted }]}>DATABASE</Text>
               </View>
             </View>
             <Text selectable style={[styles.projectId, { color: colors.primary }]}>{project.id}</Text>

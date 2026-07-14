@@ -6,7 +6,7 @@ import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
-import { useDemoProjects } from '@/components/demo-projects-provider';
+import { usePortalData } from '@/components/portal-data-provider';
 import { FacultyDrawer, type FacultyNavAction } from '@/components/faculty-drawer';
 import { FacultyProjectCard } from '@/components/faculty-project-card';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -16,7 +16,7 @@ type ProjectFilter = 'All' | 'Active' | 'Action Required' | 'Approved';
 
 export default function FacultyProjectsScreen() {
   const { colors, isDark } = useAppTheme();
-  const { notifications, projects } = useDemoProjects();
+  const { notifications, projects } = usePortalData();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filter, setFilter] = useState<ProjectFilter>('All');
   const unreadCount = notifications.filter(
@@ -164,7 +164,7 @@ export default function FacultyProjectsScreen() {
             <Text style={[styles.resultsText, { color: colors.textMuted }]}>{filteredProjects.length} results</Text>
             <View style={styles.demoLabel}>
               <Ionicons name="flask-outline" size={13} color={colors.textMuted} />
-              <Text style={[styles.resultsText, { color: colors.textMuted }]}>Local demo data</Text>
+              <Text style={[styles.resultsText, { color: colors.textMuted }]}>Database records</Text>
             </View>
           </View>
 
@@ -180,7 +180,7 @@ export default function FacultyProjectsScreen() {
               <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Ionicons name="folder-open-outline" size={31} color={colors.primary} />
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>No projects in this view</Text>
-                <Text style={[styles.emptyBody, { color: colors.textMuted }]}>Choose another status filter to view the demo projects.</Text>
+                <Text style={[styles.emptyBody, { color: colors.textMuted }]}>Choose another status filter to view your database records.</Text>
                 <Pressable onPress={() => setFilter('All')}>
                   <Text style={[styles.resetText, { color: colors.primary }]}>Show all projects</Text>
                 </Pressable>

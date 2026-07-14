@@ -14,54 +14,34 @@ import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
-import { useDemoProjects } from '@/components/demo-projects-provider';
+import { useAuth } from '@/components/auth-provider';
+import { usePortalData } from '@/components/portal-data-provider';
 import { FacultyDrawer, type FacultyNavAction } from '@/components/faculty-drawer';
 import { FacultyProjectCard } from '@/components/faculty-project-card';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { type ResearchProposal } from '@/constants/research-proposals';
 
-const FACULTY_NAME = 'Quey Jinnet Baldos';
-
-const notices = [
-  {
-    eyebrow: 'INSTITUTIONAL NOTICE',
-    title: 'Research Ethics Review',
-    body: 'Review the newly updated BatStateU institutional research ethics guidelines.',
-  },
-  {
-    eyebrow: 'RESEARCH CALL',
-    title: 'Faculty Research Grant',
-    body: 'The next proposal cycle is now open for faculty-led research projects.',
-  },
-  {
-    eyebrow: 'CAMPUS UPDATE',
-    title: 'Research Week 2026',
-    body: 'Presentation and poster-session registrations are now available.',
-  },
-];
-
-function showComingSoon(title: string, message: string) {
-  Alert.alert(title, message);
-}
-
 export default function FacultyDashboard() {
   const { colors, isDark } = useAppTheme();
-  const { notifications, projects } = useDemoProjects();
+  const { user } = useAuth();
+  const { announcements, notifications, projects } = usePortalData();
   const { width } = useWindowDimensions();
   const isWide = width >= 780;
-  const showAskAthena = width >= 520;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [activeNotice, setActiveNotice] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveNotice((current) => (current + 1) % notices.length);
+      if (announcements.length > 0) {
+        setActiveNotice((current) => (current + 1) % announcements.length);
+      }
     }, 6000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [announcements.length]);
 
-  const notice = notices[activeNotice];
+  const notice = announcements[activeNotice];
+  const facultyName = user ? `${user.firstName} ${user.lastName}` : '';
   const unreadCount = notifications.filter(
     (notification) => notification.role === 'faculty' && !notification.read,
   ).length;
@@ -151,23 +131,6 @@ export default function FacultyDashboard() {
           </View>
 
           <View style={styles.headerActions}>
-            {showAskAthena && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() =>
-                  showComingSoon('Ask Athena', 'The research assistant will be connected in a later phase.')
-                }
-                style={({ pressed }) => [
-                  styles.askButton,
-                  {
-                    backgroundColor: pressed ? colors.primaryPressed : colors.primary,
-                    opacity: pressed ? 0.8 : 1,
-                  },
-                ]}>
-                <Ionicons name="sparkles" size={15} color="#FFFFFF" />
-                <Text style={styles.askButtonText}>Ask Athena</Text>
-              </Pressable>
-            )}
             <ThemeToggle />
             <Pressable
               accessibilityLabel="Notifications"
@@ -192,7 +155,7 @@ export default function FacultyDashboard() {
                 styles.headerAvatar,
                 { backgroundColor: isDark ? '#A743C2' : '#8F32A8', opacity: pressed ? 0.72 : 1 },
               ]}>
-              <Text style={styles.headerAvatarText}>Q</Text>
+              <Text style={styles.headerAvatarText}>{user?.firstName?.[0]?.toUpperCase() || 'F'}</Text>
             </Pressable>
           </View>
         </View>
@@ -209,7 +172,7 @@ export default function FacultyDashboard() {
               <Text style={[styles.greetingBody, { color: colors.textMuted }]}>
                 Welcome back,{' '}
                 <Text selectable style={{ color: colors.primary, fontWeight: '800' }}>
-                  {FACULTY_NAME.toUpperCase()}
+                  {facultyName.toUpperCase()}
                 </Text>
                 . Manage and track your institutional research submissions.
               </Text>
@@ -230,7 +193,7 @@ export default function FacultyDashboard() {
             </Pressable>
           </View>
 
-          <Animated.View
+          {notice && <Animated.View
             entering={FadeInDown.duration(380).reduceMotion(ReduceMotion.System)}
             style={[
               styles.banner,
@@ -243,14 +206,14 @@ export default function FacultyDashboard() {
             <View style={styles.bannerShade} />
             <View style={styles.bannerContent}>
               <View style={[styles.noticeBadge, { backgroundColor: colors.primary }]}>
-                <Text style={styles.noticeBadgeText}>{notice.eyebrow}</Text>
+                <Text style={styles.noticeBadgeText}>{notice.category.toUpperCase()}</Text>
               </View>
               <Text style={styles.bannerTitle}>{notice.title}</Text>
               <Text style={styles.bannerBody}>{notice.body}</Text>
               <Pressable
                 accessibilityRole="button"
                 onPress={() =>
-                  showComingSoon(notice.title, 'Full notice details will be available here.')
+                  Alert.alert(notice.title, notice.body)
                 }
                 style={({ pressed }) => [styles.bannerLink, { opacity: pressed ? 0.62 : 1 }]}>
                 <Text style={styles.bannerLinkText}>View notice</Text>
@@ -258,7 +221,7 @@ export default function FacultyDashboard() {
               </Pressable>
             </View>
             <View style={styles.bannerDots}>
-              {notices.map((item, index) => (
+              {announcements.map((item, index) => (
                 <Pressable
                   accessibilityLabel={`Show ${item.title}`}
                   accessibilityState={{ selected: activeNotice === index }}
@@ -271,7 +234,7 @@ export default function FacultyDashboard() {
                 />
               ))}
             </View>
-          </Animated.View>
+          </Animated.View>}
 
           <View style={styles.statsGrid}>
             {stats.map((stat, index) => (

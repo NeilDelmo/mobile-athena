@@ -5,6 +5,7 @@ import { Animated, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme } from '@/components/app-theme';
+import { useAuth } from '@/components/auth-provider';
 import { BrandMark } from '@/components/brand-mark';
 
 export type ResearchHeadView = 'dashboard' | 'proposals';
@@ -27,6 +28,7 @@ export function ResearchHeadDrawer({
   onClose,
 }: ResearchHeadDrawerProps) {
   const { colors, isDark } = useAppTheme();
+  const { logout, user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const drawerWidth = Math.min(width * 0.84, 332);
@@ -58,8 +60,9 @@ export function ResearchHeadDrawer({
     closeDrawer();
   };
 
-  const signOut = () => {
+  const signOut = async () => {
     onClose();
+    await logout();
     router.replace('/login' as Href);
   };
 
@@ -123,11 +126,11 @@ export function ResearchHeadDrawer({
 
           <View style={[styles.profile, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
             <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={styles.avatarText}>RH</Text>
+              <Text style={styles.avatarText}>{`${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase()}</Text>
             </View>
             <View style={styles.profileCopy}>
-              <Text numberOfLines={1} style={[styles.profileName, { color: colors.text }]}>Research Head</Text>
-              <Text numberOfLines={1} style={[styles.profileEmail, { color: colors.textMuted }]}>research@athena.edu</Text>
+              <Text numberOfLines={1} style={[styles.profileName, { color: colors.text }]}>{user ? `${user.firstName} ${user.lastName}` : 'Research Head'}</Text>
+              <Text numberOfLines={1} style={[styles.profileEmail, { color: colors.textMuted }]}>{user?.email}</Text>
             </View>
           </View>
 
