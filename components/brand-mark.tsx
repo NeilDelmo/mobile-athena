@@ -32,7 +32,7 @@ export function BrandMark({ compact = false, inverted = false }: BrandMarkProps)
       {!compact && (
         <View>
           <Text style={[styles.name, { color: colors.text }]}>ATHENA</Text>
-          <Text style={[styles.label, { color: colors.textMuted }]}>UNIVERSITY PORTAL</Text>
+          <Text style={[styles.label, { color: colors.textMuted }]}>RESEARCH MANAGEMENT</Text>
         </View>
       )}
     </View>

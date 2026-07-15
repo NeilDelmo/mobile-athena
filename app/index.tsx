@@ -12,7 +12,7 @@ import { WelcomeIntro } from '@/components/welcome-intro';
 
 let hasPlayedWelcomeIntro = false;
 
-function CampusArtwork() {
+function ResearchArtwork() {
   const { colors, isDark } = useAppTheme();
 
   return (
@@ -21,20 +21,33 @@ function CampusArtwork() {
       <View style={[styles.sun, { backgroundColor: isDark ? '#F1617D' : '#E95772' }]} />
       <View style={styles.sparkOne} />
       <View style={styles.sparkTwo} />
-      <View style={styles.building}>
-        <View style={styles.roof} />
-        <View style={styles.pediment} />
-        <View style={styles.columns}>
-          {[0, 1, 2, 3].map((column) => (
-            <View key={column} style={styles.column} />
+      <View style={styles.researchCard}>
+        <View style={styles.cardTopRow}>
+          <View style={styles.cardCopy}>
+            <View style={styles.cardLine} />
+            <View style={[styles.cardLine, styles.cardLineShort]} />
+          </View>
+          <View style={styles.cardStatus} />
+        </View>
+        <View style={styles.chart}>
+          {[38, 62, 49, 78, 67].map((height, index) => (
+            <View key={index} style={[styles.chartBar, { height }]} />
           ))}
         </View>
-        <View style={styles.steps} />
-        <View style={styles.stepTwo} />
+        <View style={styles.cardFooter}>
+          <View style={styles.cardAvatar} />
+          <View style={styles.cardFooterLine} />
+        </View>
+      </View>
+      <View style={[styles.researchNode, styles.nodeOne]}>
+        <Ionicons name="document-text-outline" size={19} color="#FFFFFF" />
+      </View>
+      <View style={[styles.researchNode, styles.nodeTwo]}>
+        <Ionicons name="git-network-outline" size={19} color="#FFFFFF" />
       </View>
       <View style={[styles.artBadge, { backgroundColor: colors.surface }]}>
-        <Ionicons name="school" size={17} color={colors.primary} />
-        <Text style={[styles.badgeText, { color: colors.text }]}>Your campus, connected</Text>
+        <Ionicons name="analytics-outline" size={17} color={colors.primary} />
+        <Text style={[styles.badgeText, { color: colors.text }]}>Research, organized</Text>
       </View>
     </View>
   );
@@ -73,22 +86,21 @@ export default function GetStartedScreen() {
             <View style={[styles.copy, isWide && styles.copyWide]}>
               <View style={[styles.eyebrow, { backgroundColor: colors.primarySoft }]}>
                 <View style={[styles.eyebrowDot, { backgroundColor: colors.primary }]} />
-                <Text style={[styles.eyebrowText, { color: colors.primary }]}>FOR THE ATHENA COMMUNITY</Text>
+                <Text style={[styles.eyebrowText, { color: colors.primary }]}>RESEARCH MANAGEMENT</Text>
               </View>
               <Text style={[styles.title, { color: colors.text }, isWide && styles.titleWide]}>
-                Everything you need,{`\n`}
+                Manage research,{`\n`}
                 <Text style={{ color: colors.primary }}>all in one place.</Text>
               </Text>
               <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                Stay connected to university life—from important updates to the resources that move
-                your day forward.
+                Track research calls, proposals, reviews, and decisions through one focused workspace.
               </Text>
 
               <View style={styles.featureRow}>
                 {[
-                  ['notifications-outline', 'Live updates'],
-                  ['shield-checkmark-outline', 'Secure access'],
-                  ['people-outline', 'One community'],
+                  ['megaphone-outline', 'Research calls'],
+                  ['document-text-outline', 'Proposal tracking'],
+                  ['shield-checkmark-outline', 'Role-based access'],
                 ].map(([icon, label]) => (
                   <View key={label} style={styles.feature}>
                     <View style={[styles.featureIcon, { backgroundColor: colors.primarySoft }]}>
@@ -100,7 +112,7 @@ export default function GetStartedScreen() {
               </View>
             </View>
 
-            <CampusArtwork />
+            <ResearchArtwork />
           </View>
 
           <View style={styles.footer}>
@@ -125,7 +137,7 @@ export default function GetStartedScreen() {
                 <Ionicons name="arrow-forward" size={18} color={colors.primary} />
               </View>
             </Pressable>
-            <Text style={[styles.helperText, { color: colors.textMuted }]}>Made for students, faculty, and staff</Text>
+            <Text style={[styles.helperText, { color: colors.textMuted }]}>For faculty researchers and research management</Text>
           </View>
         </View>
       </ScrollView>
@@ -209,13 +221,41 @@ const styles = StyleSheet.create({
   sun: { borderRadius: 45, height: 90, position: 'absolute', right: 52, top: 41, width: 90 },
   sparkOne: { backgroundColor: '#FFFFFF', borderRadius: 3, height: 6, left: 42, opacity: 0.7, position: 'absolute', top: 48, width: 6 },
   sparkTwo: { backgroundColor: '#FFFFFF', borderRadius: 2, height: 4, opacity: 0.5, position: 'absolute', right: 38, top: 154, width: 4 },
-  building: { bottom: 36, left: '12%', position: 'absolute', width: '76%' },
-  roof: { alignSelf: 'center', borderBottomColor: '#FFF4F4', borderBottomWidth: 30, borderLeftColor: 'transparent', borderLeftWidth: 112, borderRightColor: 'transparent', borderRightWidth: 112, height: 0, width: 0 },
-  pediment: { backgroundColor: '#FFF4F4', height: 9, width: '100%' },
-  columns: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 20 },
-  column: { backgroundColor: '#FFF4F4', height: 67, width: 18 },
-  steps: { alignSelf: 'center', backgroundColor: '#FFF4F4', height: 8, width: '91%' },
-  stepTwo: { alignSelf: 'center', backgroundColor: '#FFF4F4', height: 7, marginTop: 4, opacity: 0.82, width: '100%' },
+  researchCard: {
+    backgroundColor: '#FFF8F7',
+    borderCurve: 'continuous',
+    borderRadius: 22,
+    height: 178,
+    left: '18%',
+    padding: 18,
+    position: 'absolute',
+    top: 34,
+    transform: [{ rotate: '-3deg' }],
+    width: '64%',
+  },
+  cardTopRow: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
+  cardCopy: { gap: 7, width: '64%' },
+  cardLine: { backgroundColor: '#C95B72', borderRadius: 4, height: 7, width: '100%' },
+  cardLineShort: { backgroundColor: '#E4B4BE', width: '68%' },
+  cardStatus: { backgroundColor: '#B20D30', borderRadius: 8, height: 16, width: 36 },
+  chart: { alignItems: 'flex-end', flexDirection: 'row', gap: 8, height: 82, paddingTop: 12 },
+  chartBar: { backgroundColor: '#C93A58', borderRadius: 5, flex: 1, opacity: 0.88 },
+  cardFooter: { alignItems: 'center', flexDirection: 'row', gap: 8, paddingTop: 8 },
+  cardAvatar: { backgroundColor: '#F0CAD2', borderRadius: 7, height: 14, width: 14 },
+  cardFooterLine: { backgroundColor: '#E4B4BE', borderRadius: 3, height: 5, width: 72 },
+  researchNode: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderColor: 'rgba(255,255,255,0.28)',
+    borderRadius: 15,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: 'center',
+    position: 'absolute',
+    width: 44,
+  },
+  nodeOne: { left: 22, top: 37 },
+  nodeTwo: { right: 22, top: 137 },
   artBadge: {
     alignItems: 'center',
     borderRadius: 14,

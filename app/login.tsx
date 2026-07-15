@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,7 +18,7 @@ import { getAuthDestination, useAuth } from '@/components/auth-provider';
 import { BrandMark } from '@/components/brand-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-const UNIVERSITY_DOMAIN = '@g.batstate-u.edu.ph';
+const INSTITUTIONAL_DOMAIN = '@g.batstate-u.edu.ph';
 
 export default function LoginScreen() {
   const { colors, isDark } = useAppTheme();
@@ -32,8 +31,8 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail.endsWith(UNIVERSITY_DOMAIN)) {
-      setError(`Use your ${UNIVERSITY_DOMAIN} university email address.`);
+    if (!normalizedEmail.endsWith(INSTITUTIONAL_DOMAIN)) {
+      setError(`Use your ${INSTITUTIONAL_DOMAIN} institutional email address.`);
       return;
     }
     if (!password) {
@@ -59,7 +58,7 @@ export default function LoginScreen() {
         <View style={styles.panelCircleOne} />
         <View style={styles.panelCircleTwo} />
       </View>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView
           bounces={false}
           contentContainerStyle={styles.scrollContent}
@@ -88,15 +87,15 @@ export default function LoginScreen() {
                 <View style={[styles.welcomeIcon, { backgroundColor: colors.primarySoft }]}>
                   <Ionicons name="shield-checkmark" size={23} color={colors.primary} />
                 </View>
-                <Text style={[styles.title, { color: colors.text }]}>University sign in</Text>
+                <Text style={[styles.title, { color: colors.text }]}>Sign in to ATHENA</Text>
                 <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                  Access is limited to registered BatStateU accounts using the {UNIVERSITY_DOMAIN} domain.
+                  Access is limited to registered BatStateU research accounts using the {INSTITUTIONAL_DOMAIN} domain.
                 </Text>
 
                 <View style={styles.form}>
                   <View>
-                    <Text style={[styles.label, { color: colors.text }]}>University email</Text>
-                    <View style={[styles.inputWrap, { backgroundColor: colors.surfaceMuted, borderColor: error && !email.endsWith(UNIVERSITY_DOMAIN) ? colors.primary : colors.border }]}>
+                    <Text style={[styles.label, { color: colors.text }]}>Institutional email</Text>
+                    <View style={[styles.inputWrap, { backgroundColor: colors.surfaceMuted, borderColor: error && !email.endsWith(INSTITUTIONAL_DOMAIN) ? colors.primary : colors.border }]}>
                       <Ionicons name="mail-outline" size={19} color={colors.textMuted} />
                       <TextInput
                         autoCapitalize="none"
@@ -105,7 +104,7 @@ export default function LoginScreen() {
                         keyboardType="email-address"
                         onChangeText={setEmail}
                         onSubmitEditing={handleLogin}
-                        placeholder={`name${UNIVERSITY_DOMAIN}`}
+                        placeholder={`name${INSTITUTIONAL_DOMAIN}`}
                         placeholderTextColor={colors.textMuted}
                         style={[styles.input, { color: colors.text }]}
                         value={email}
@@ -163,7 +162,7 @@ export default function LoginScreen() {
                 <View style={[styles.demoNote, { backgroundColor: colors.surfaceMuted, borderColor: colors.border }]}>
                   <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
                   <Text selectable style={[styles.demoText, { color: colors.textMuted }]}>
-                    Demo accounts: quey.baldos{UNIVERSITY_DOMAIN} or mary.baldos{UNIVERSITY_DOMAIN}{'\n'}
+                    Demo accounts: quey.baldos{INSTITUTIONAL_DOMAIN} or mary.baldos{INSTITUTIONAL_DOMAIN}{'\n'}
                     Password: AthenaDemo2026!
                   </Text>
                 </View>

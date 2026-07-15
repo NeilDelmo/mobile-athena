@@ -84,7 +84,7 @@ export default function FacultyProjectsScreen() {
               <Ionicons name="menu" size={23} color={colors.primary} />
             </Pressable>
             <View>
-              <Text style={[styles.headerEyebrow, { color: colors.primary }]}>FACULTY PORTAL</Text>
+              <Text style={[styles.headerEyebrow, { color: colors.primary }]}>ATHENA RESEARCH</Text>
               <Text style={[styles.headerTitle, { color: colors.text }]}>My Projects</Text>
             </View>
           </View>

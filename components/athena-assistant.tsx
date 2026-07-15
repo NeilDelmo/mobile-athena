@@ -394,7 +394,7 @@ export function AthenaAssistant() {
                     <Ionicons name="arrow-up" size={19} color="#FFFFFF" />
                   </Pressable>
                 </View>
-                <Text style={[styles.disclaimer, { color: colors.textMuted }]}>AI can make mistakes. Verify official university requirements.</Text>
+                <Text style={[styles.disclaimer, { color: colors.textMuted }]}>AI can make mistakes. Verify official Research Office requirements.</Text>
               </View>
             </Animated.View>
           </KeyboardAvoidingView>

@@ -125,7 +125,7 @@ export default function FacultyDashboard() {
               <Ionicons name="menu" size={23} color={colors.primary} />
             </Pressable>
             <View>
-              <Text style={[styles.headerEyebrow, { color: colors.primary }]}>ATHENA PORTAL</Text>
+              <Text style={[styles.headerEyebrow, { color: colors.primary }]}>ATHENA RESEARCH</Text>
               <Text style={[styles.headerTitle, { color: colors.text }]}>Faculty Workspace</Text>
             </View>
           </View>

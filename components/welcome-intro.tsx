@@ -26,7 +26,7 @@ export function WelcomeIntro({ onFinish }: WelcomeIntroProps) {
 
   return (
     <Animated.View
-      accessibilityLabel="ATHENA University Portal"
+      accessibilityLabel="ATHENA Research Management"
       accessibilityViewIsModal
       exiting={FadeOut.duration(220).reduceMotion(ReduceMotion.System)}
       style={styles.container}>

@@ -123,7 +123,7 @@ export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: Facu
             </View>
           </View>
 
-          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>FACULTY PORTAL</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>RESEARCH WORKSPACE</Text>
           <View style={styles.navList}>
             {navItems.map((item) => {
               const selected = item.action === activeAction;
@@ -153,7 +153,7 @@ export function FacultyDrawer({ activeAction, visible, onClose, onSelect }: Facu
           <View style={styles.drawerSpacer} />
           <View style={[styles.universityNote, { borderColor: colors.border }]}>
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.primary} />
-            <Text style={[styles.universityNoteText, { color: colors.textMuted }]}>ATHENA faculty mobile workspace</Text>
+            <Text style={[styles.universityNoteText, { color: colors.textMuted }]}>ATHENA faculty research workspace</Text>
           </View>
           <Pressable onPress={signOut} style={({ pressed }) => [styles.signOut, { opacity: pressed ? 0.58 : 1 }]}>
             <Ionicons name="log-out-outline" size={20} color={colors.textMuted} />

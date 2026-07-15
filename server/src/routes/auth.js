@@ -29,7 +29,7 @@ authRouter.post('/login', async (request, response) => {
   if (!UNIVERSITY_EMAIL_PATTERN.test(email)) {
     throw new HttpError(
       403,
-      'Use your @g.batstate-u.edu.ph university email address.',
+      'Use your @g.batstate-u.edu.ph institutional email address.',
       'UNIVERSITY_EMAIL_REQUIRED',
     );
   }

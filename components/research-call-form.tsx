@@ -43,7 +43,7 @@ const fields: {
   multiline?: boolean;
   required?: boolean;
 }[] = [
-  { key: 'title', label: 'Call title', placeholder: 'e.g. Sustainable Campus Research Grant', icon: 'megaphone-outline', required: true },
+  { key: 'title', label: 'Call title', placeholder: 'e.g. Collaborative Research Grant', icon: 'megaphone-outline', required: true },
   { key: 'sponsor', label: 'Sponsor', placeholder: 'BatStateU Research Office', icon: 'business-outline' },
   { key: 'category', label: 'Research category', placeholder: 'e.g. Sustainability and Innovation', icon: 'pricetag-outline' },
   { key: 'budget', label: 'Funding or support', placeholder: 'e.g. Up to PHP 250,000', icon: 'wallet-outline' },
